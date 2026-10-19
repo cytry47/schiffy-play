@@ -19112,6 +19112,9 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
       lvlOn = false;
       if (bossId !== s.id || !bossRun) {
         if (s.camBoss) CAM.boss.dogH = s.camBoss;   // the port's boss framing (data/camera.json), so legacy lays out the same arena
+        // legacy's MODE is still 'boss' after an earlier 2D fight (ow() / level() drop bossRun without legacy's mode switch):
+        // close that fight first, or bossStart's setMode('boss') runs BOSS_MODE.exit() after building the new run (bossRun = null)
+        if (MODE === 'boss') { BOSS_MODE.exit(); MODE = 'title'; }
         bossStart(s.id);
         bossId = s.id; atkSeen = null;
       }
