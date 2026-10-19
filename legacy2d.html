@@ -18473,7 +18473,16 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
   const ghost0 = pDrawGhost;
   pDrawGhost = function (c) { if (stReal == null) return ghost0(c); const k = P.st; P.st = stReal; ghost0(c); P.st = k; };
   const bossDraw0 = bossDraw;
-  bossDraw = function (c) { bossDraw0(c); if (p2) drawP2(c); };
+  let zonesOv = null;   // the B-key overlay (D24, the port's bossZones): hit shape yellow, body-contact zones red
+  function drawZones(c, z) {
+    c.save(); c.lineWidth = 3;
+    [[z.hit, '#ffcc33'], ...z.zones.map((q) => [q, '#ff3344'])].forEach(([q, col]) => {
+      c.strokeStyle = col; c.beginPath();
+      if (q.r != null) c.arc(q.x, q.y, q.r, 0, 7); else c.rect(q.x0, q.y0, q.x1 - q.x0, q.y1 - q.y0);
+      c.stroke(); });
+    c.restore();
+  }
+  bossDraw = function (c) { bossDraw0(c); if (p2) drawP2(c); if (zonesOv) drawZones(c, zonesOv); };
   const exFx0 = exFxDraw;   // levels have no bossDraw: player 2 goes in right before player 1's EX layer 0 (pDraw :916)
   exFxDraw = function (c, layer) { if (layer === 0 && !bossRun && p2) drawP2(c); exFx0(c, layer); };
   petalDone = function () {};   // the port runs the story (legacy pFrame calls this 1.8 s after the petal)
@@ -18787,10 +18796,15 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
   /* phases 1 and 2: the Cursed Jester (D13, src/render2d/cammyNew.js) instead of legacy's sprites; transition B and phase 3: the Phantom Monarch (same file).
      Legacy's sprite worker is still started (and asked for phase 3's clips) so the Monarch is ready when phase 3 comes. */
   const camJester = (f) => !!(window.CammyNew && CammyNew.ok) && f.phase <= 2 && !(f.state === 'mtrans' && f.tr === 'B');
-  bossDrawCammy = function (c, f, fl) { const up = f.atk && f.atk.name === 'drop' && f.cy > 0; if (up) { c.save(); c.translate(0, -f.cy); }
+  /* D24: like the 3D view (src/render/cammyView.ts ART_DX), the wide new art stands back (further right) over his new hit box and
+     contact circles (data CM.hb / cb, hbP3 / cbP3); part of it may leave the screen */
+  const CAM_DX = { jester: 80, monarch: -40 };   // the 2D art sits differently from the 3D models, so its own numbers (fitted by eye on the B overlay)
+  bossDrawCammy = function (c, f, fl) { const up = f.atk && f.atk.name === 'drop' && f.cy > 0, nw = !!(window.CammyNew && CammyNew.ok);
+    const dx = nw ? (camJester(f) ? CAM_DX.jester : CammyNew.drawMonarch ? CAM_DX.monarch : 0) * cammySz(f) : 0;
+    c.save(); c.translate(dx, up ? -f.cy : 0);
     try { if (camJester(f)) { try { cammySprStart(); cammySprWant(3); } catch (x) { /* no worker */ } CammyNew.drawFight(c, f, fl, T); }
       else if (window.CammyNew && CammyNew.ok && CammyNew.drawMonarch) CammyNew.drawMonarch(c, f, fl, T);   // transition B + phase 3: the Phantom Monarch (D13)
-      else bossDrawCammy0(c, f, fl); } finally { if (up) c.restore(); } };
+      else bossDrawCammy0(c, f, fl); } finally { c.restore(); } };
   const cammyDrawGirl0 = cammyDrawGirl;                              // Goth Girl Kisses (D9 kiss2): legacy draws Vesper from a stand-in 'kiss' plan (one wave per kiss)
   cammyDrawGirl = function (c, f) {
     const a = f.atk;
@@ -18874,6 +18888,17 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
   let htPh = null;
   /* DJ Moki rework placeholders (D11, src/render/mokiShapes.ts): drawn in world space right after legacy's mokiDrawItems. Not legacy code. */
   let mkPh = null;
+  /* Giant Rat rework placeholders (D20, src/render/ratShapes.ts): drawn in world space right after legacy's last Rat item (ratDrawHandful). Not legacy code. */
+  let rtPh = null;
+  /* The Magpie (D25, src/render/magpieShapes.ts): legacy has no Magpie. Her whole picture (flat backdrop, scrolling platforms,
+     body, telegraphs, shots) is the shape list the port hands over, drawn instead of legacy's boss body and items. Not legacy code. */
+  let mgPh = null;
+  const mgBody0 = bossBody, mgItems0 = bossItems;   // (legacy bossDraw = body + items; player 2 is drawn after it by the wrap above)
+  const PH_ONLY = { boss8: 1, boss9: 1, boss10: 1 };   // the Magpie, the Stargazer, Bruce (D25): shapes only
+  bossBody = function (c) { if (PH_ONLY[bossId]) { if (mgPh) drawPh(c, mgPh); return; } mgBody0(c); };
+  bossItems = function (c) { if (!PH_ONLY[bossId]) mgItems0(c); };
+  const ratDrawHandful0 = ratDrawHandful;
+  ratDrawHandful = function (c, f) { ratDrawHandful0(c, f); if (rtPh && f.hp > 0) drawPh(c, rtPh); };
   const mokiDrawItems0 = mokiDrawItems;
   mokiDrawItems = function (c, f) { mokiDrawItems0(c, f); if (mkPh && f.hp > 0) drawPh(c, mkPh); };
   /* phase 1: the Banana Brute (src/render2d/hanatoNew.js, spec docs/art/hanato_2d_spec.md) instead of legacy's body; the
@@ -19114,8 +19139,13 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
       }
       if (s.id === 'boss6') cammySync(f, s.mir);
       camPh = s.id === 'boss6' ? s.ph : null;
+      zonesOv = s.zones || null;
       htPh = s.id === 'boss7' ? s.ph : null;
       mkPh = s.id === 'boss4' ? s.ph : null;
+      rtPh = s.id === 'boss1' ? s.ph : null;
+      mgPh = PH_ONLY[s.id] ? s.ph : null;
+      if (PH_ONLY[s.id]) bossRun.items = [];   // her platforms scroll: they are in the shape list, not legacy's static items
+      if (s.id === 'boss1' && f.atk && f.atk.d) f.atk = { ...f.atk, name: 'rw_' + f.atk.name };   // D20: a reworked attack is not one of legacy's (its old drawing and Lights Out stay off)
       if (s.id === 'boss7') hanatoSync(f);
       if (!hold) bossLook(f, dt);
       bossRun.end = s.end || null; bossRun.endT = s.endT;

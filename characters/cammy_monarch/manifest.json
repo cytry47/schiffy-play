@@ -1,0 +1,66 @@
+{
+  "id": "cammy_monarch",
+  "kind": "boss",
+  "model": "cammy_monarch.glb",
+  "source": "tools/art/cammy_new.py --form monarch (Blender 5.2; the Phantom Monarch, transition B + P3 = the pack-built model of decision D22, baked by tools/art/cammy_monarch_bake.mjs). Same skeleton as characters/cammy; src/render/cammyView.ts shows one file at a time",
+  "scale": 1,
+  "yaw": 22,
+  "standOn": 0,
+  "outline": {
+    "width": 0.02,
+    "color": "#0b0810",
+    "widths": {
+      "m_crownball": 0.04,
+      "m_flame2": 0.03,
+      "m_sclera": 0.0225,
+      "m_tongue": 0.035,
+      "m_minion": 0.04,
+      "m_flame": 0.035,
+      "m_crown": 0.04,
+      "m_mouth": 0.0225,
+      "m_cream": 0.03,
+      "m_glass": 0.02,
+      "m_fur2": 0.025,
+      "m_brow": 0.025,
+      "m_fur": 0.035,
+      "glove": 0.05,
+      "fur": 0.05
+    }
+  },
+  "inked": [
+    "m_crownball",
+    "m_flame2",
+    "m_sclera",
+    "m_tongue",
+    "m_minion",
+    "m_flame",
+    "m_crown",
+    "m_mouth",
+    "m_cream",
+    "m_glass",
+    "m_fur2",
+    "m_brow",
+    "m_fur",
+    "glove",
+    "fur"
+  ],
+  "clips": {
+    "idle": "idle",
+    "dying": "dying",
+    "trans_b": "trans_b"
+  },
+  "atk": {
+    "bolts": {
+      "wind": 7
+    },
+    "horse": {
+      "wind": 19
+    }
+  },
+  "sockets": [
+    "socket.head",
+    "socket.chest",
+    "socket.hand",
+    "socket.mouth"
+  ]
+}

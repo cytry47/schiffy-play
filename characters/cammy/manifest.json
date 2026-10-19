@@ -2,13 +2,20 @@
   "id": "cammy",
   "kind": "boss",
   "model": "cammy.glb",
-  "source": "tools/art/cammy_new.py (Blender 5.2, metaballs + bmesh; after the approved 2D src/render2d/cammyNew.js, decision D13: the Cursed Jester P1-2, the Phantom Monarch P3)",
+  "source": "tools/art/cammy_new.py --form jester (Blender 5.2; the Cursed Jester P1-2 = the pack-built model of decision D21, baked by tools/art/cammy_jester_bake.mjs). The Phantom Monarch (transition B + P3) is its own file, characters/cammy_monarch (decision D22)",
   "scale": 1,
   "yaw": 22,
   "standOn": 0,
   "outline": {
     "width": 0.02,
-    "color": "#0b0810"
+    "color": "#0b0810",
+    "widths": {
+      "fur": 0.05,
+      "j_glove": 0.05,
+      "j_bobble": 0.045,
+      "j_aura": 0.035,
+      "j_card": 0.03
+    }
   },
   "inked": [
     "fur",
@@ -20,12 +27,15 @@
     "watch",
     "minion",
     "flame",
-    "tongue"
+    "tongue",
+    "j_aura",
+    "j_bobble",
+    "j_card",
+    "j_glove"
   ],
   "clips": {
     "idle": "idle",
     "roar": "roar",
-    "dying": "dying",
     "trans_b": "trans_b"
   },
   "atk": {
@@ -46,29 +56,6 @@
     },
     "blades": {
       "wind": 10
-    },
-    "bolts": {
-      "wind": 7
-    },
-    "horse": {
-      "wind": 19
-    }
-  },
-  "forms": {
-    "1": {
-      "hide": [
-        "form.monarch"
-      ]
-    },
-    "2": {
-      "hide": [
-        "form.monarch"
-      ]
-    },
-    "3": {
-      "hide": [
-        "hips"
-      ]
     }
   },
   "sockets": [

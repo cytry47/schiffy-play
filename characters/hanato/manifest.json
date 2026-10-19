@@ -2,30 +2,45 @@
   "id": "hanato",
   "kind": "boss",
   "model": "hanato.glb",
-  "source": "tools/art/hanato_new.py (Blender 5.2, metaballs + bmesh; phase 1 = the Banana Brute after src/render2d/hanatoNew.js and docs/art/hanato_ref_p1_brute.png; phase 2 = tools/art/hanato.py's Baldtao head, unchanged)",
+  "source": "tools/art/hanato_new.py --form brute (Blender 5.2; the Banana Brute P1 = Ruben's final pack model, tools/art/hanato_pack/brute_final.js, baked by tools/art/hanato_bake.mjs; the Peel Roll ball = tools/art/hanato.py's). Baldtao (P2) is its own file, characters/hanato_baldtao",
   "scale": 1,
   "yaw": 25,
   "standOn": 0,
   "outline": {
     "width": 0.022,
-    "color": "#14100a"
+    "color": "#14100a",
+    "widths": {
+      "fur_shade": 0.025,
+      "b_sclera": 0.0187,
+      "b_glove": 0.0374,
+      "b_snot": 0.0224,
+      "b_limb": 0.0374,
+      "b_cuff": 0.0374,
+      "b_sole": 0.0299,
+      "b_tip": 0.0299,
+      "b_fur": 0.0299,
+      "metal": 0.03,
+      "snot": 0.025,
+      "fur": 0.0374
+    }
   },
   "inked": [
-    "fur",
-    "skin",
-    "face",
-    "limb",
-    "glove",
-    "tanuki",
-    "peel",
-    "tip",
+    "fur_shade",
+    "b_sclera",
+    "b_glove",
+    "b_snot",
+    "b_limb",
+    "b_cuff",
+    "b_sole",
+    "b_tip",
+    "b_fur",
+    "metal",
     "snot",
-    "metal"
+    "fur"
   ],
   "clips": {
     "idle": "idle",
-    "xform": "xform",
-    "dying": "dying"
+    "xform": "xform"
   },
   "atk": {
     "meteor": {
@@ -39,21 +54,6 @@
     },
     "glove": {
       "wind": 14
-    },
-    "bonk": {
-      "wind": 22
-    },
-    "laser": {
-      "wind": 24
-    },
-    "glint": {
-      "wind": 22
-    },
-    "shine": {
-      "wind": 22
-    },
-    "orbit": {
-      "wind": 24
     }
   },
   "forms": {
@@ -67,12 +67,6 @@
       "hide": [
         "suit",
         "form.head"
-      ]
-    },
-    "2": {
-      "hide": [
-        "suit",
-        "form.ball"
       ]
     },
     "burst": {

@@ -1,0 +1,72 @@
+{
+  "id": "hanato_baldtao",
+  "kind": "boss",
+  "model": "hanato_baldtao.glb",
+  "source": "tools/art/hanato_new.py --form baldtao (Blender 5.2; Baldtao P2 = Ruben's final pack head, tools/art/hanato_pack/baldtao_final.js, baked by tools/art/hanato_bake.mjs). Same skeleton as characters/hanato; src/render/hanatoView.ts shows one file at a time",
+  "scale": 1,
+  "yaw": 25,
+  "standOn": 0,
+  "outline": {
+    "width": 0.022,
+    "color": "#14100a",
+    "widths": {
+      "h_sclera": 0.0177,
+      "h_wire": 0.0124,
+      "h_lip": 0.0248,
+      "fur": 0.0355
+    }
+  },
+  "inked": [
+    "h_sclera",
+    "h_wire",
+    "h_lip",
+    "fur"
+  ],
+  "clips": {
+    "idle": "idle",
+    "dying": "dying"
+  },
+  "atk": {
+    "bonk": {
+      "wind": 22
+    },
+    "laser": {
+      "wind": 24
+    },
+    "glint": {
+      "wind": 22
+    },
+    "shine": {
+      "wind": 22
+    },
+    "orbit": {
+      "wind": 24
+    },
+    "dive": {
+      "wind": 22,
+      "clip": "atk_bonk"
+    },
+    "beam": {
+      "wind": 24,
+      "clip": "atk_laser"
+    },
+    "ha": {
+      "wind": 22,
+      "clip": "atk_shine"
+    },
+    "ufo": {
+      "wind": 24,
+      "clip": "atk_orbit"
+    },
+    "pyramid": {
+      "wind": 22,
+      "clip": "atk_glint"
+    }
+  },
+  "sockets": [
+    "socket.head",
+    "socket.chest",
+    "socket.hand",
+    "socket.mouth"
+  ]
+}
