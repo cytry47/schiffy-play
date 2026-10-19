@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Model Viewer</title>
+    <style>:root{--bg:#9fc3d8;--panel:#f6ecd0;--ink:#14100a}html,body{background:var(--bg);height:100%;color:var(--ink);margin:0;font:13px ui-rounded,system-ui,sans-serif;overflow:hidden}#view{position:absolute;inset:0}#ui{background:var(--panel);border:3px solid var(--ink);max-width:min(360px,100vw - 24px);box-shadow:3px 3px 0 var(--ink);border-radius:8px;padding:10px;position:absolute;top:12px;left:12px}#ui h1{margin:0 0 6px;font:700 16px Georgia,serif}#clips{flex-wrap:wrap;gap:4px;margin:6px 0;display:flex}button{border:2px solid var(--ink);cursor:pointer;background:#f6d492;border-radius:6px;padding:3px 8px;font:700 12px Georgia,serif}button.on{background:var(--ink);color:var(--panel)}label{margin:4px 0;display:block}#info{white-space:pre;margin-top:6px;font:11px ui-monospace,monospace}</style>
+    <script type="module" crossorigin src="./assets/viewer-Dj5nKXJ6.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/models-HCKHhHtO.js">
+  </head>
+  <body>
+    <div id="view"></div>
+    <div id="ui">
+      <h1>Model viewer</h1>
+      <label>character <select id="char"></select></label>
+      <div id="clips"></div>
+      <label>yaw <input id="yaw" type="range" min="-180" max="180" value="35" /> <span id="yawv">35</span></label>
+      <label><input id="mirror" type="checkbox" /> face left (mirror)</label>
+      <label><input id="bones" type="checkbox" /> skeleton + sockets</label>
+      <div id="info"></div>
+    </div>
+  </body>
+</html>

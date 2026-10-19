@@ -1,0 +1,40 @@
+{
+  "id": "junk",
+  "model": "kit.glb",
+  "source": "tools/art/kit_junk.py (Blender 5.2; after the legacy junkyard JUNK_BG, docs/art/legacy_moki_*.png)",
+  "pivots": "floor_junk: top-centre, 2 m tile; pile / car / crane / fence / stack / pole / tire / fridge / barrel / grass: ground centre; cloud, disco (ball centre), truss: centre; goldbar, plat_junk (top-centre): as in tama; shots (can, bone, peel, lid, disc, note, wave): centre; stink: centre, radius 1 m; peel_patch: ground centre; laser_low / laser_high: bottom-centre, 1.3 x 1 m; spk_lane: centre.",
+  "outline": { "width": 0.02, "color": "#14100a" },
+  "scenes": {
+    "day": {
+      "sky": "#bcd3dc",
+      "layout": [
+        { "piece": "floor_junk", "every": [-400, 1500, 200], "h": 0, "z": 0 },
+        { "piece": "cloud", "x": 150, "h": 560, "z": -9 },
+        { "piece": "cloud", "x": 800, "h": 600, "z": -10 },
+        { "piece": "stack", "x": 640, "h": 0, "z": -8 },
+        { "piece": "crane", "x": 120, "h": 0, "z": -6.5 },
+        { "piece": "pole", "x": 440, "h": 0, "z": -5.5 },
+        { "piece": "pole", "x": 900, "h": 0, "z": -5.5 },
+        { "piece": "fence", "every": [-300, 1400, 200], "h": 0, "z": -4.6 },
+        { "piece": "pile", "x": -60, "h": 0, "z": -3.6 },
+        { "piece": "pile", "x": 1080, "h": 0, "z": -3.8 },
+        { "piece": "car", "x": 80, "h": 120, "z": -3.9 },
+        { "piece": "car", "x": 1000, "h": 110, "z": -4.1 },
+        { "piece": "fridge", "x": 230, "h": 0, "z": -3.0 },
+        { "piece": "barrel", "x": 330, "h": 0, "z": -2.8 },
+        { "piece": "tire", "x": 560, "h": 0, "z": -2.6 },
+        { "piece": "puddle", "x": 620, "h": 0, "z": 0.6 },
+        { "piece": "puddle", "x": 180, "h": 0, "z": 1.2 },
+        { "piece": "grass", "x": 40, "h": 0, "z": 1.6 },
+        { "piece": "grass", "x": 1010, "h": 0, "z": 1.5 }
+      ]
+    },
+    "party": {
+      "sky": "#3a3550",
+      "layout": [
+        { "piece": "disco", "x": 530, "h": 470, "z": -1.6 },
+        { "piece": "truss", "x": 530, "h": 560, "z": -2.2 }
+      ]
+    }
+  }
+}

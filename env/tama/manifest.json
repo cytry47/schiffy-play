@@ -1,0 +1,44 @@
+{
+  "id": "tama",
+  "model": "kit.glb",
+  "source": "tools/art/kit_tama.py (Blender 5.2; after the legacy Tama Mart / The Den arena, docs/art/legacy_rat_*.png)",
+  "pivots": "floor_*: top-centre on the ground line, 2 m tile; wall_*: bottom-centre, 2 m tile; plat_*: top-centre (2.2 m / 1.9 m, the data widths); goldbar, register, cart, shelf, bouncer, mound, column (1 m tall, scaled to the eruption height), mousehole, shelf_bg, crates_bg, barrel, cheese_wheel, basket: bottom-centre; lamp*, sign_*, window, sale, chalkboard, bunting, pipe: centre; shots (tag, coin, minion, crate, cheese, glove, can, box, clod): centre. Facing pieces (minion, glove, bouncer, cart handle) face +X.",
+  "outline": { "width": 0.02, "color": "#14100a" },
+  "scenes": {
+    "store": {
+      "sky": "#f3e6c4",
+      "layout": [
+        { "piece": "floor_store", "every": [-400, 1500, 200], "h": 0, "z": 0 },
+        { "piece": "wall_store", "every": [-500, 1600, 200], "h": 0, "z": -3.2 },
+        { "piece": "window", "x": 160, "h": 230, "z": -3.05 },
+        { "piece": "sign_tama", "x": 530, "h": 400, "z": -3.05 },
+        { "piece": "sale", "x": 530, "h": 250, "z": -2.95 },
+        { "piece": "bunting", "every": [-100, 1300, 400], "h": 560, "z": -2.9 },
+        { "piece": "shelf_bg", "x": 330, "h": 0, "z": -2.7 },
+        { "piece": "shelf_bg", "x": 760, "h": 0, "z": -2.7 },
+        { "piece": "shelf_bg", "x": 1040, "h": 0, "z": -2.7 },
+        { "piece": "lamp", "x": 260, "h": 520, "z": -1.6 },
+        { "piece": "lamp", "x": 800, "h": 520, "z": -1.6 },
+        { "piece": "basket", "x": 980, "h": 0, "z": 1.1 }
+      ]
+    },
+    "den": {
+      "sky": "#1a1418",
+      "layout": [
+        { "piece": "floor_den", "every": [-400, 1500, 200], "h": 0, "z": 0 },
+        { "piece": "wall_den", "every": [-500, 1600, 200], "h": 0, "z": -3.2 },
+        { "piece": "pipe", "every": [-400, 1500, 200], "h": 330, "z": -3.0 },
+        { "piece": "pipe", "every": [-400, 1500, 200], "h": 450, "z": -3.0 },
+        { "piece": "sign_den", "x": 530, "h": 470, "z": -3.0 },
+        { "piece": "chalkboard", "x": 300, "h": 230, "z": -3.0 },
+        { "piece": "crates_bg", "x": 60, "h": 0, "z": -2.2 },
+        { "piece": "crates_bg", "x": 700, "h": 0, "z": -2.4 },
+        { "piece": "barrel", "x": 240, "h": 0, "z": -2.0 },
+        { "piece": "cheese_wheel", "x": 1000, "h": 0, "z": -1.8 },
+        { "piece": "lamp_den", "x": 230, "h": 420, "z": -1.6 },
+        { "piece": "lamp_den", "x": 530, "h": 420, "z": -1.6 },
+        { "piece": "lamp_den", "x": 830, "h": 420, "z": -1.6 }
+      ]
+    }
+  }
+}

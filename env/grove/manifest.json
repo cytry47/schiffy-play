@@ -1,0 +1,37 @@
+{
+  "id": "grove",
+  "model": "kit.glb",
+  "source": "tools/art/kit_grove.py (Blender 5.2; after the legacy banana grove GROVE_BG, docs/art/legacy_hanato_*.png)",
+  "pivots": "floor_grove: top-centre, 2 m tile; pile (half buried), palm, tree, mountain, crates, rock, tuft: ground centre; cloud, moon: centre; leaves: their base; boomerang, chunk, star: centre; wave (0.5 x 0.45), lane_mark, shine (2.3 x 0.7), bonk_mark: bottom-centre; glint: centre; laser: starts at its origin, 1 m along +x (scaled and turned).",
+  "outline": { "width": 0.02, "color": "#14100a" },
+  "scenes": {
+    "day": {
+      "sky": "#c5dde0",
+      "layout": [
+        { "piece": "floor_grove", "every": [-400, 1500, 200], "h": 0, "z": 0 },
+        { "piece": "mountain", "x": 620, "h": 0, "z": -11 },
+        { "piece": "mountain", "x": 980, "h": 0, "z": -12 },
+        { "piece": "cloud", "x": 300, "h": 560, "z": -9 },
+        { "piece": "cloud", "x": 760, "h": 520, "z": -10 },
+        { "piece": "pile", "x": 300, "h": 0, "z": -5.5 },
+        { "piece": "tree", "x": -40, "h": 0, "z": -4.5 },
+        { "piece": "tree", "x": 1060, "h": 0, "z": -4.8 },
+        { "piece": "palm", "x": 640, "h": 0, "z": -4.2 },
+        { "piece": "palm", "x": 760, "h": 0, "z": -4.6 },
+        { "piece": "crates", "x": 580, "h": 0, "z": -3.4 },
+        { "piece": "rock", "x": 450, "h": 0, "z": -2.6 },
+        { "piece": "rock", "x": 900, "h": 0, "z": -2.8 },
+        { "piece": "tuft", "every": [-100, 1200, 170], "h": 0, "z": -1.2 },
+        { "piece": "tuft", "every": [-30, 1200, 230], "h": 0, "z": 1.0 },
+        { "piece": "leaves", "x": -60, "h": 330, "z": 1.8 },
+        { "piece": "leaves", "x": 1050, "h": -40, "z": 1.8 }
+      ]
+    },
+    "dusk": {
+      "sky": "#8a80b0",
+      "layout": [
+        { "piece": "moon", "x": 420, "h": 520, "z": -8 }
+      ]
+    }
+  }
+}

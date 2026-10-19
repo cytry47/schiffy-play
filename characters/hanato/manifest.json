@@ -1,0 +1,94 @@
+{
+  "id": "hanato",
+  "kind": "boss",
+  "model": "hanato.glb",
+  "source": "tools/art/hanato_new.py (Blender 5.2, metaballs + bmesh; phase 1 = the Banana Brute after src/render2d/hanatoNew.js and docs/art/hanato_ref_p1_brute.png; phase 2 = tools/art/hanato.py's Baldtao head, unchanged)",
+  "scale": 1,
+  "yaw": 25,
+  "standOn": 0,
+  "outline": {
+    "width": 0.022,
+    "color": "#14100a"
+  },
+  "inked": [
+    "fur",
+    "skin",
+    "face",
+    "limb",
+    "glove",
+    "tanuki",
+    "peel",
+    "tip",
+    "snot",
+    "metal"
+  ],
+  "clips": {
+    "idle": "idle",
+    "xform": "xform",
+    "dying": "dying"
+  },
+  "atk": {
+    "meteor": {
+      "wind": 14
+    },
+    "bounce": {
+      "wind": 6
+    },
+    "seeds": {
+      "wind": 17
+    },
+    "glove": {
+      "wind": 14
+    },
+    "bonk": {
+      "wind": 22
+    },
+    "laser": {
+      "wind": 24
+    },
+    "glint": {
+      "wind": 22
+    },
+    "shine": {
+      "wind": 22
+    },
+    "orbit": {
+      "wind": 24
+    }
+  },
+  "forms": {
+    "1": {
+      "hide": [
+        "form.ball",
+        "form.head"
+      ]
+    },
+    "ball": {
+      "hide": [
+        "suit",
+        "form.head"
+      ]
+    },
+    "2": {
+      "hide": [
+        "suit",
+        "form.ball"
+      ]
+    },
+    "burst": {
+      "hide": [
+        "spine",
+        "leg.L",
+        "leg.R",
+        "form.ball",
+        "form.head"
+      ]
+    }
+  },
+  "sockets": [
+    "socket.head",
+    "socket.chest",
+    "socket.hand",
+    "socket.mouth"
+  ]
+}

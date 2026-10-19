@@ -1,0 +1,149 @@
+{
+  "id": "villager",
+  "kind": "npc",
+  "model": "villager.glb",
+  "source": "tools/art/villager_rig.py (Blender 5.2; the map villager of tools/art/villager.py rigged, with legacy mokiRender's VN expressions; Bruce's placeholder look after legacy bruceDraw; references docs/art/legacy_villagers.png, docs/art/legacy_vn_chars.png)",
+  "scale": 1,
+  "yaw": 0,
+  "outline": {
+    "width": 0.012,
+    "color": "#14100a"
+  },
+  "inked": [
+    "v_fur",
+    "v_leaf",
+    "v_jacket",
+    "v_steel",
+    "v_hilt",
+    "v_bandana",
+    "v_banana",
+    "v_brush",
+    "v_horn",
+    "v_flame",
+    "v_gold"
+  ],
+  "clips": {
+    "idle": "idle"
+  },
+  "sockets": [
+    "socket.head",
+    "socket.chest"
+  ],
+  "looks": {
+    "Moki": {
+      "colors": {},
+      "acc": [
+        "acc_sprout"
+      ]
+    },
+    "Cytry": {
+      "colors": {
+        "v_fur": "#B0683A",
+        "v_fur_dark": "#6E3A20",
+        "v_belly": "#D99A6A",
+        "v_leaf": "#D8565A",
+        "v_mask": "#6E3A20"
+      },
+      "acc": [
+        "acc_sprout",
+        "acc_jacket",
+        "acc_sword"
+      ]
+    },
+    "Dany": {
+      "colors": {
+        "v_fur": "#F0B860",
+        "v_fur_dark": "#C88A40",
+        "v_belly": "#F8D898",
+        "v_leaf": "#5CC4C8",
+        "v_mask": "#C88A40"
+      },
+      "acc": [
+        "acc_sprout",
+        "acc_bandana",
+        "acc_clip"
+      ]
+    },
+    "Akhil": {
+      "colors": {
+        "v_fur": "#F4C040",
+        "v_fur_dark": "#D89A20",
+        "v_belly": "#FBE49A",
+        "v_leaf": "#F6D04A",
+        "v_mask": "#D89A20"
+      },
+      "acc": [
+        "acc_sprout",
+        "acc_banana_hat",
+        "acc_brush"
+      ]
+    },
+    "Bruce": {
+      "colors": {
+        "v_fur": "#2E2F6B",
+        "v_fur_dark": "#1F2052",
+        "v_belly": "#4A4C93",
+        "v_mask": "#14143A",
+        "v_eyeball": "#F6C84C",
+        "v_blush": "#2E2F6B",
+        "v_pink": "#1F2052"
+      },
+      "acc": [
+        "acc_horns",
+        "acc_flames",
+        "acc_gold",
+        "acc_rose",
+        "acc_slits"
+      ],
+      "vn": {
+        "clips": {
+          "neutral": "vn_bruce",
+          "angry": "vn_bruce"
+        },
+        "faces": {
+          "neutral": [
+            "face_smirk"
+          ],
+          "angry": [
+            "face_angry"
+          ]
+        },
+        "blink": false
+      }
+    }
+  },
+  "vn": {
+    "height": 258,
+    "clips": {
+      "neutral": "vn_neutral",
+      "happy": "vn_happy",
+      "worried": "vn_worried",
+      "surprised": "vn_surprised"
+    },
+    "faces": {
+      "neutral": [
+        "face_neutral"
+      ],
+      "happy": [
+        "face_happy"
+      ],
+      "worried": [
+        "face_worried"
+      ],
+      "surprised": [
+        "face_surprised"
+      ]
+    },
+    "blink": {
+      "bones": [
+        "eye.L",
+        "eye.R"
+      ],
+      "every": 3.8,
+      "from": 3.66,
+      "skip": [
+        "happy"
+      ]
+    }
+  }
+}

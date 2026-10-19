@@ -1,0 +1,682 @@
+{
+ "id": "vn",
+ "model": "kit.glb",
+ "source": "tools/art/kit_vn.py (Blender 5.2; after legacy VN_BGS, docs/art/legacy_vn_bgs.png)",
+ "pivots": "ground centre (mound, gold_bar, stake, hole, paw, lantern, torch, throne, spear); hole, paw: lean 70 deg up toward the camera; trail: top centre (an upright cutout 2.2 m tall); whale_far, clouds: centre; cloud_sea: centre bottom; band_*: top centre (hangs below the ground line); hall: its wall at z, 9 m tall; hall_floor and carpet: from z 6 m back to 6 m forward. isle_float / isle_castle: the top of the grass cap; title_cliff: its top edge at Schiffy's spot (runs 3.6 m left, 3.3 m right); cloud_bank / cloud_far: centre bottom (4 m wide). Watercolor pieces (whale_far, isles, cliff, cloud banks): vertex colours x the shared paper texture.",
+ "outline": {
+  "width": 0.02,
+  "color": "#14100a",
+  "inks": {
+   "cloud_wc": "#8e88bc",
+   "cloud_far_wc": "#a49cc8",
+   "fine_wc": "none"
+  }
+ },
+ "vn": "scenes = legacy VN_BGS names. Placement as the arena kits (x, h in sim units on the side view, z in metres). VN fields: gy = screen y (of 450) of the ground line h = 0 (legacy groundY); sky2 = bottom colour of a vertical gradient from sky; meadow = the tutorial kit's scenery behind (camera 0); tint = [colour, opacity] over the picture; drift = the clouds drift (legacy vnSky speeds); npc = characters standing in the scene (model, colours by role). title = the main menu backdrop (render/vnView.ts title()): isle_* and whale_far drift and bob like legacy; s = scale. outline.inks = outline colour per material (the clouds' soft lilac line).",
+ "scenes": {
+  "test": {
+   "sky": "#8ccbe8",
+   "sky2": "#e6f3f2",
+   "gy": 333,
+   "layout": [
+    {
+     "piece": "band_test",
+     "x": 400,
+     "h": 0,
+     "z": -1.0
+    },
+    {
+     "piece": "cloud_day",
+     "x": 120,
+     "h": 287,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_day",
+     "x": 360,
+     "h": 211,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_day",
+     "x": 576,
+     "h": 306,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_day",
+     "x": 720,
+     "h": 201,
+     "z": -1.5
+    }
+   ],
+   "drift": true
+  },
+  "dusk": {
+   "sky": "#e9824a",
+   "sky2": "#f7d9a8",
+   "gy": 333,
+   "layout": [
+    {
+     "piece": "band_dusk",
+     "x": 400,
+     "h": 0,
+     "z": -1.0
+    },
+    {
+     "piece": "cloud_dusk",
+     "x": 120,
+     "h": 287,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_dusk",
+     "x": 360,
+     "h": 211,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_dusk",
+     "x": 576,
+     "h": 306,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_dusk",
+     "x": 720,
+     "h": 201,
+     "z": -1.5
+    }
+   ],
+   "drift": true
+  },
+  "night": {
+   "sky": "#1b2a5a",
+   "sky2": "#5a6fa8",
+   "gy": 333,
+   "layout": [
+    {
+     "piece": "band_night",
+     "x": 400,
+     "h": 0,
+     "z": -1.0
+    },
+    {
+     "piece": "cloud_night",
+     "x": 120,
+     "h": 287,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_night",
+     "x": 360,
+     "h": 211,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_night",
+     "x": 576,
+     "h": 306,
+     "z": -1.5
+    },
+    {
+     "piece": "cloud_night",
+     "x": 720,
+     "h": 201,
+     "z": -1.5
+    }
+   ],
+   "drift": true
+  },
+  "field": {
+   "sky": "#a9cfe0",
+   "gy": 300,
+   "meadow": true,
+   "layout": [
+    {
+     "piece": "mound",
+     "x": 400,
+     "h": 0,
+     "z": -1.6
+    },
+    {
+     "piece": "gold_bar",
+     "x": 412,
+     "h": 14,
+     "z": -1.62
+    },
+    {
+     "piece": "stake",
+     "x": 336,
+     "h": 0,
+     "z": -1.55
+    }
+   ]
+  },
+  "stash0": {
+   "sky": "#a9cfe0",
+   "gy": 300,
+   "meadow": true,
+   "layout": [
+    {
+     "piece": "mound",
+     "x": 400,
+     "h": 0,
+     "z": -1.8
+    },
+    {
+     "piece": "stake",
+     "x": 460,
+     "h": 0,
+     "z": -1.4
+    }
+   ]
+  },
+  "stash": {
+   "sky": "#a9cfe0",
+   "gy": 300,
+   "meadow": true,
+   "layout": [
+    {
+     "piece": "hole",
+     "x": 400,
+     "h": 0,
+     "z": -1.6
+    },
+    {
+     "piece": "stake",
+     "x": 456,
+     "h": 0,
+     "z": -1.3
+    },
+    {
+     "piece": "paw",
+     "x": 264,
+     "h": 0,
+     "z": -0.75
+    },
+    {
+     "piece": "paw",
+     "x": 300,
+     "h": 0,
+     "z": -0.95
+    },
+    {
+     "piece": "paw",
+     "x": 336,
+     "h": 0,
+     "z": -0.85
+    }
+   ]
+  },
+  "path": {
+   "sky": "#a9cfe0",
+   "gy": 240,
+   "meadow": true,
+   "tint": [
+    "#262248",
+    0.26
+   ],
+   "layout": [
+    {
+     "piece": "trail",
+     "x": 400,
+     "h": 0,
+     "z": 0.8
+    },
+    {
+     "piece": "lantern",
+     "x": 500,
+     "h": 0,
+     "z": -1.2
+    },
+    {
+     "piece": "whale_far",
+     "x": 330,
+     "h": 420,
+     "z": -30
+    }
+   ]
+  },
+  "village": {
+   "sky": "#bcd6ea",
+   "sky2": "#f4f8fb",
+   "gy": 392,
+   "layout": [
+    {
+     "piece": "whale_far",
+     "x": 400,
+     "h": 205,
+     "z": -3.0
+    },
+    {
+     "piece": "cloud_day",
+     "x": 240,
+     "h": 330,
+     "z": -5
+    },
+    {
+     "piece": "cloud_day",
+     "x": 560,
+     "h": 345,
+     "z": -5.5
+    },
+    {
+     "piece": "cloud_sea",
+     "x": -200,
+     "h": 96,
+     "z": -3.6
+    },
+    {
+     "piece": "cloud_sea",
+     "x": -20,
+     "h": 96,
+     "z": -3.6
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 160,
+     "h": 96,
+     "z": -3.6
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 340,
+     "h": 96,
+     "z": -3.6
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 520,
+     "h": 96,
+     "z": -3.6
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 700,
+     "h": 96,
+     "z": -3.6
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 880,
+     "h": 96,
+     "z": -3.6
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 1060,
+     "h": 96,
+     "z": -3.6
+    },
+    {
+     "piece": "cloud_sea",
+     "x": -110,
+     "h": 70,
+     "z": -3.0
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 90,
+     "h": 70,
+     "z": -3.0
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 290,
+     "h": 70,
+     "z": -3.0
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 490,
+     "h": 70,
+     "z": -3.0
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 690,
+     "h": 70,
+     "z": -3.0
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 890,
+     "h": 70,
+     "z": -3.0
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 1090,
+     "h": 70,
+     "z": -3.0
+    },
+    {
+     "piece": "cloud_sea",
+     "x": -160,
+     "h": 36,
+     "z": -2.4
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 60,
+     "h": 36,
+     "z": -2.4
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 280,
+     "h": 36,
+     "z": -2.4
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 500,
+     "h": 36,
+     "z": -2.4
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 720,
+     "h": 36,
+     "z": -2.4
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 940,
+     "h": 36,
+     "z": -2.4
+    },
+    {
+     "piece": "cloud_sea",
+     "x": -60,
+     "h": 0,
+     "z": -1.8
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 180,
+     "h": 0,
+     "z": -1.8
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 420,
+     "h": 0,
+     "z": -1.8
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 660,
+     "h": 0,
+     "z": -1.8
+    },
+    {
+     "piece": "cloud_sea",
+     "x": 900,
+     "h": 0,
+     "z": -1.8
+    }
+   ]
+  },
+  "throne": {
+   "sky": "#140f2a",
+   "gy": 392,
+   "layout": [
+    {
+     "piece": "hall",
+     "x": 400,
+     "h": 0,
+     "z": -6
+    },
+    {
+     "piece": "hall_floor",
+     "x": 400,
+     "h": 0,
+     "z": -6
+    },
+    {
+     "piece": "carpet",
+     "x": 600,
+     "h": 0,
+     "z": -6
+    },
+    {
+     "piece": "throne",
+     "x": 624,
+     "h": 0,
+     "z": -5
+    },
+    {
+     "piece": "torch",
+     "x": 150,
+     "h": 0,
+     "z": -5.4
+    },
+    {
+     "piece": "torch",
+     "x": 420,
+     "h": 0,
+     "z": -5.4
+    },
+    {
+     "piece": "torch",
+     "x": 800,
+     "h": 0,
+     "z": -5.4
+    },
+    {
+     "piece": "spear",
+     "x": 474,
+     "h": 0,
+     "z": -0.95
+    },
+    {
+     "piece": "spear",
+     "x": 796,
+     "h": 0,
+     "z": -0.95
+    }
+   ],
+   "npc": [
+    {
+     "model": "ratz",
+     "x": 440,
+     "h": 0,
+     "z": -1.0,
+     "colors": {
+      "fur": "#E8B83A",
+      "fur_shade": "#C8961E",
+      "belly": "#F2D06A"
+     }
+    },
+    {
+     "model": "ratz",
+     "x": 762,
+     "h": 0,
+     "z": -1.0,
+     "colors": {
+      "fur": "#E8B83A",
+      "fur_shade": "#C8961E",
+      "belly": "#F2D06A"
+     }
+    }
+   ]
+  },
+  "title": {
+   "sky": "#8b86c6",
+   "sky2": "#f7cfa2",
+   "gy": 378,
+   "layout": [
+    {
+     "piece": "isle_float",
+     "x": -150,
+     "h": 330,
+     "z": -7.0,
+     "s": 0.85
+    },
+    {
+     "piece": "isle_castle",
+     "x": 410,
+     "h": 150,
+     "z": -6.0,
+     "s": 0.9
+    },
+    {
+     "piece": "isle_float",
+     "x": 860,
+     "h": 170,
+     "z": -9.0,
+     "s": 0.7
+    },
+    {
+     "piece": "whale_far",
+     "x": 200,
+     "h": 262,
+     "z": -4.2
+    },
+    {
+     "piece": "cloud_far",
+     "x": -260,
+     "h": 20,
+     "z": -8.0
+    },
+    {
+     "piece": "cloud_far",
+     "x": 80,
+     "h": 20,
+     "z": -8.0
+    },
+    {
+     "piece": "cloud_far",
+     "x": 420,
+     "h": 20,
+     "z": -8.0
+    },
+    {
+     "piece": "cloud_far",
+     "x": 760,
+     "h": 20,
+     "z": -8.0
+    },
+    {
+     "piece": "cloud_far",
+     "x": 1100,
+     "h": 20,
+     "z": -8.0
+    },
+    {
+     "piece": "cloud_far",
+     "x": -120,
+     "h": -30,
+     "z": -5.0
+    },
+    {
+     "piece": "cloud_far",
+     "x": 200,
+     "h": -30,
+     "z": -5.0
+    },
+    {
+     "piece": "cloud_far",
+     "x": 520,
+     "h": -30,
+     "z": -5.0
+    },
+    {
+     "piece": "cloud_far",
+     "x": 840,
+     "h": -30,
+     "z": -5.0
+    },
+    {
+     "piece": "cloud_bank",
+     "x": -220,
+     "h": -90,
+     "z": -2.5
+    },
+    {
+     "piece": "cloud_bank",
+     "x": 80,
+     "h": -90,
+     "z": -2.5
+    },
+    {
+     "piece": "cloud_bank",
+     "x": 380,
+     "h": -90,
+     "z": -2.5
+    },
+    {
+     "piece": "cloud_bank",
+     "x": 680,
+     "h": -90,
+     "z": -2.5
+    },
+    {
+     "piece": "cloud_bank",
+     "x": 980,
+     "h": -90,
+     "z": -2.5
+    },
+    {
+     "piece": "cloud_bank",
+     "x": -150,
+     "h": -170,
+     "z": -1.4
+    },
+    {
+     "piece": "cloud_bank",
+     "x": 130,
+     "h": -170,
+     "z": -1.4
+    },
+    {
+     "piece": "cloud_bank",
+     "x": 410,
+     "h": -170,
+     "z": -1.4
+    },
+    {
+     "piece": "cloud_bank",
+     "x": 690,
+     "h": -170,
+     "z": -1.4
+    },
+    {
+     "piece": "cloud_bank",
+     "x": 970,
+     "h": -170,
+     "z": -1.4
+    },
+    {
+     "piece": "title_cliff",
+     "x": 208,
+     "h": 0,
+     "z": 0
+    },
+    {
+     "piece": "gold_bar",
+     "x": 276,
+     "h": 0,
+     "z": 0.25,
+     "s": 1.5
+    },
+    {
+     "piece": "gold_bar",
+     "x": 340,
+     "h": 0,
+     "z": 0.25,
+     "s": 1.5
+    },
+    {
+     "piece": "gold_bar",
+     "x": 308,
+     "h": 19,
+     "z": 0.25,
+     "s": 1.5
+    }
+   ]
+  }
+ }
+}

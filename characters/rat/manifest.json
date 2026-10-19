@@ -1,0 +1,19 @@
+{
+  "id": "rat",
+  "kind": "boss",
+  "model": "rat.glb",
+  "source": "tools/art/rat.py (Blender 5.2, built from primitives; reference legacy bossDrawRat and docs/art/legacy_rat_*.png)",
+  "scale": 1,
+  "yaw": 30,
+  "standOn": 64,
+  "outline": { "width": 0.028, "color": "#14100a" },
+  "inked": ["fur", "eye"],
+  "clips": { "idle": "idle", "roar": "roar", "collapse": "collapse", "dying": "dying" },
+  "atk": {
+    "cart": { "wind": 22 }, "tags": { "wind": 17 }, "coins": { "wind": 19 }, "shelves": { "wind": 8 },
+    "swarm": { "wind": 22 }, "bouncers": { "wind": 38 }, "crates": { "wind": 19 }, "cheese": { "wind": 22 },
+    "lights": { "wind": 36 }, "whip": { "wind": 14 }, "burrow": { "wind": 14 }
+  },
+  "phases": { "2": { "fur": "#B9857A", "pupil": "#D8412F" }, "3": { "fur": "#B9857A", "pupil": "#D8412F" } },
+  "sockets": ["socket.head", "socket.chest", "socket.hand", "socket.mouth"]
+}

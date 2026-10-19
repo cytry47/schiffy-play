@@ -1,0 +1,13 @@
+{
+  "id": "vesper",
+  "kind": "boss",
+  "model": "vesper.glb",
+  "source": "tools/art/vesper.py (Blender 5.2, built from primitives; Cammy's helper in the kiss attack; reference docs/art/legacy_cammy_kiss.png)",
+  "scale": 1,
+  "yaw": 20,
+  "standOn": 0,
+  "outline": { "width": 0.018, "color": "#14100a" },
+  "inked": ["fur", "skin"],
+  "clips": { "idle": "idle", "kiss": "kiss" },
+  "sockets": ["socket.head", "socket.chest", "socket.hand", "socket.mouth"]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "moki",
+  "kind": "boss",
+  "model": "moki.glb",
+  "source": "tools/art/moki.py (Blender 5.2, built from primitives; reference legacy bossDrawMoki / bossDrawMokiDJ / bossDrawMokiMech and docs/art/legacy_moki_*.png)",
+  "scale": 1,
+  "yaw": 30,
+  "standOn": 64,
+  "outline": { "width": 0.022, "color": "#14100a" },
+  "inked": ["fur", "metal", "deck", "phones", "leaf"],
+  "clips": { "idle": "idle", "dying": "dying" },
+  "atk": {
+    "toss": { "wind": 22 }, "lid": { "wind": 26 }, "cloud": { "wind": 24 }, "peek": { "wind": 0 },
+    "bass": { "wind": 72 }, "disc": { "wind": 44 }, "laser": { "wind": 30 }, "scratch": { "wind": 40 },
+    "wall": { "wind": 72, "clip": "atk_bass" }, "drop": { "wind": 60 }, "remix": { "wind": 12 }
+  },
+  "forms": {
+    "1": { "hide": ["form.dj", "form.mech", "phones"], "moki": [0, 0, 0.58, 0.62] },
+    "2": { "hide": ["lid", "form.mech"], "moki": [-1.45, -0.05, 0, 0.8] },
+    "3": { "hide": ["lid", "form.dj"], "moki": [0, 0.05, 1.32, 0.5] }
+  },
+  "sockets": ["socket.head", "socket.chest", "socket.hand", "socket.mouth"]
+}

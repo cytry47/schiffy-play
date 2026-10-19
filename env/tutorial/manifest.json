@@ -1,0 +1,178 @@
+{
+  "id": "tutorial",
+  "model": "kit.glb",
+  "source": "tools/art/kit_tutorial.py (Blender 5.2; after the legacy tutorial terrain and the watercolor meadow, 09_meadow.js)",
+  "pivots": "ground: top-centre on the ground line, 2 m tile (lawn 3 m toward the camera, 7 m back); brick: bottom-centre 0.5 x 0.3 m; wall_cap: bottom-centre 1 m wide; plat: top-centre 1 m wide; gate: bottom-centre 0.7 x 1 m tile; target: face centre, radius 0.5; post: bottom-centre 1 m; mound/sign/tree_*/far_*/hedge/bush_far/rock/fern: ground centre; orb/heart/petal: centre; sky: the screen centre (a screen-sized card for 60 m back)",
+  "outline": {
+    "width": 0.02,
+    "color": "#14100a",
+    "inks": {
+      "wc_lime": "#4f7a3a",
+      "wc_yellow": "#7c7a2c",
+      "wc_amber": "#7c5518",
+      "wc_olive": "#40693a",
+      "wc_dark": "#173c2c",
+      "wc_teal": "#6f9a98",
+      "wc_bark": "#4e3f55",
+      "wc_rock": "#4a4670",
+      "wc_fg": "#10301f",
+      "wc_far": "#a9b98e",
+      "wc_haze": "#bccaa0",
+      "wc_lawn": "none",
+      "wc_fine": "none",
+      "wc_sky": "none"
+    }
+  },
+  "sky": "#c8dde3",
+  "tiles": {
+    "ground": 200,
+    "brick": [
+      50,
+      30
+    ],
+    "gate": [
+      70,
+      100
+    ]
+  },
+  "scatter": {
+    "seed": 7,
+    "note": "piece: one name, or a list used in turn",
+    "layers": [
+      {
+        "piece": "bush_far",
+        "every": [
+          2800,
+          2900
+        ],
+        "z": [
+          -24.5,
+          -23.5
+        ],
+        "scale": [
+          0.95,
+          1.05
+        ],
+        "y": -110
+      },
+      {
+        "piece": [
+          "far_slimA",
+          "far_slimB",
+          "far_slimC",
+          "far_amber"
+        ],
+        "every": [
+          600,
+          1000
+        ],
+        "z": [
+          -14.5,
+          -13.5
+        ],
+        "scale": [
+          0.78,
+          0.92
+        ]
+      },
+      {
+        "piece": [
+          "tree_slimA",
+          "tree_amber",
+          "tree_slimB",
+          "tree_oak",
+          "tree_slimC",
+          "tree_slimB",
+          "tree_amber",
+          "tree_oak2",
+          "tree_dark",
+          "tree_slimA",
+          "tree_slimC"
+        ],
+        "every": [
+          300,
+          520
+        ],
+        "z": [
+          -9.6,
+          -8.6
+        ],
+        "scale": [
+          0.86,
+          1.06
+        ]
+      },
+      {
+        "piece": "hedge",
+        "every": [
+          1500,
+          1560
+        ],
+        "z": [
+          -6.7,
+          -6.4
+        ],
+        "scale": [
+          0.95,
+          1.05
+        ]
+      },
+      {
+        "piece": "rock",
+        "every": [
+          1200,
+          1900
+        ],
+        "z": [
+          -6.2,
+          -6.0
+        ],
+        "scale": [
+          1.0,
+          1.5
+        ]
+      },
+      {
+        "piece": "fern",
+        "every": [
+          500,
+          900
+        ],
+        "z": [
+          1.8,
+          2.2
+        ],
+        "scale": [
+          1.7,
+          2.3
+        ],
+        "y": -30
+      }
+    ]
+  },
+  "backdrop": {
+    "note": "render/levelView.ts frame(): pieces kept in the camera's view (legacy screen-space layers). sky: the card, z m back. whale: legacy pDrawSkyBg bgAsset('flying whale + village', 640 - 210 p, 142 + 6 sin(0.9 t), width 200 + 120 p) with p = level progress; kit = the kit it comes from.",
+    "sky": {
+      "piece": "sky",
+      "z": -60
+    },
+    "whale": {
+      "kit": "vn",
+      "piece": "whale_far",
+      "z": -40,
+      "x": [
+        640,
+        -210
+      ],
+      "y": 142,
+      "bob": [
+        6,
+        0.9
+      ],
+      "w": [
+        200,
+        120
+      ]
+    }
+  }
+}

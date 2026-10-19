@@ -1,0 +1,112 @@
+{
+  "id": "moki_banana",
+  "kind": "npc",
+  "model": "moki_banana.glb",
+  "source": "tools/art/moki_npc.py --variant banana (Ruben's approved Moki designs: docs/art/moki_design_v3.svg banana figure, docs/art/moki_emotes.md clips and faces, src/render2d/mokiNew.js)",
+  "scale": 1,
+  "yaw": 35,
+  "outline": {
+    "width": 0.008,
+    "color": "#14100a"
+  },
+  "inked": [
+    "fur",
+    "leaf",
+    "steam",
+    "hood",
+    "prop"
+  ],
+  "clips": {
+    "idle": "idle",
+    "talk": "talk",
+    "walk": "walk"
+  },
+  "sockets": [
+    "socket.head",
+    "socket.chest"
+  ],
+  "vn": {
+    "height": 305,
+    "clips": {
+      "neutral": "idle",
+      "smug": "idle",
+      "happy": "happy",
+      "worried": "worried",
+      "surprised": "surprised",
+      "angry": "angry",
+      "sad": "sad",
+      "scared": "afraid",
+      "afraid": "afraid",
+      "idle": "idle",
+      "talk": "talk",
+      "wave": "wave",
+      "walk": "walk"
+    },
+    "faces": {
+      "neutral": [
+        "face_calm"
+      ],
+      "smug": [
+        "face_calm"
+      ],
+      "happy": [
+        "face_happy"
+      ],
+      "worried": [
+        "face_worried"
+      ],
+      "surprised": [
+        "face_surprised"
+      ],
+      "angry": [
+        "face_angry"
+      ],
+      "sad": [
+        "face_sad"
+      ],
+      "scared": [
+        "face_afraid"
+      ],
+      "afraid": [
+        "face_afraid"
+      ],
+      "idle": [
+        "face_calm"
+      ],
+      "talk": [
+        "face_chatty"
+      ],
+      "wave": [
+        "face_grin"
+      ],
+      "walk": [
+        "face_calm"
+      ]
+    },
+    "once": [
+      "surprised"
+    ],
+    "typing": "talk"
+  },
+  "checks": {
+    "roots": {
+      "pass": true,
+      "frames": 323,
+      "minDepthMM": 24.76,
+      "marginMM": 8.0,
+      "glb": "e2986d6fdb52de4accf4ff25434e8e581200ea0e",
+      "by": "tools/art/moki_npc.py root_check"
+    },
+    "faces": {
+      "pass": true,
+      "rays": 1021536,
+      "frames": 15,
+      "minMaskGapMM": 1.49,
+      "gapMM": 0.5,
+      "minPupilShown": 1.0,
+      "pupilMin": 0.6,
+      "glb": "e2986d6fdb52de4accf4ff25434e8e581200ea0e",
+      "by": "tools/art/moki_npc.py face_check"
+    }
+  }
+}

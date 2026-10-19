@@ -1,0 +1,441 @@
+{
+ "id": "whale",
+ "kind": "map",
+ "model": "kit.glb",
+ "source": "tools/art/kit_whale.py (Blender 5.2; after legacy WCW.drawWorld, docs/art/legacy_whale_*.png). Step 1: ground, whale, sky.",
+ "pivots": "ground_*, wall_*, stairs_*, whale: the map's top-left corner (map coordinates, 1 m = 100 units, built from src/data/maps/whale.art.json with src/data/maps/heights.json); cloud, isle: their centre.",
+ "outline": {
+  "width": 0.02,
+  "color": "#14100a",
+  "inks": {
+   "wc_stone": "#8c7a5c",
+   "wc_wall": "#5e5a6e",
+   "wc_rock": "#5a4a52",
+   "wc_wood": "#5a3418",
+   "wc_red": "#6e1e18",
+   "wc_blue": "#1f3460",
+   "wc_water": "#3a7898",
+   "wc_leaf": "#24502c",
+   "wc_gold": "#7a5214",
+   "wc_dark": "#14100a",
+   "wc_cloud": "#9aa6c8",
+   "wc_pave": "none"
+  }
+ },
+ "sky": "#8cc6ec",
+ "ground": [
+  "ground_T1",
+  "ground_T2",
+  "ground_T3",
+  "wall_T2",
+  "wall_T3",
+  "stairs_1",
+  "stairs_2",
+  "whale"
+ ],
+ "place": [
+  {
+   "piece": "cloud",
+   "x": 1493,
+   "y": 1406,
+   "h": -701,
+   "s": 2.92
+  },
+  {
+   "piece": "cloud",
+   "x": 2570,
+   "y": 1193,
+   "h": -675,
+   "s": 1.76
+  },
+  {
+   "piece": "cloud",
+   "x": -556,
+   "y": 198,
+   "h": -830,
+   "s": 2.88
+  },
+  {
+   "piece": "cloud",
+   "x": 1475,
+   "y": -9,
+   "h": -900,
+   "s": 2.82
+  },
+  {
+   "piece": "cloud",
+   "x": 372,
+   "y": 1911,
+   "h": -765,
+   "s": 2.55
+  },
+  {
+   "piece": "cloud",
+   "x": 2403,
+   "y": 387,
+   "h": -810,
+   "s": 1.83
+  },
+  {
+   "piece": "cloud",
+   "x": -589,
+   "y": 1259,
+   "h": -816,
+   "s": 2.03
+  },
+  {
+   "piece": "cloud",
+   "x": 1768,
+   "y": -169,
+   "h": -656,
+   "s": 1.63
+  },
+  {
+   "piece": "cloud",
+   "x": 630,
+   "y": 1031,
+   "h": -898,
+   "s": 1.67
+  },
+  {
+   "piece": "cloud",
+   "x": 2524,
+   "y": 1867,
+   "h": -814,
+   "s": 2.1
+  },
+  {
+   "piece": "cloud",
+   "x": 2079,
+   "y": 1677,
+   "h": -891,
+   "s": 2.92
+  },
+  {
+   "piece": "cloud",
+   "x": 542,
+   "y": 1826,
+   "h": -764,
+   "s": 2.04
+  },
+  {
+   "piece": "cloud",
+   "x": 1716,
+   "y": 1992,
+   "h": -860,
+   "s": 1.67
+  },
+  {
+   "piece": "cloud",
+   "x": 1396,
+   "y": 1600,
+   "h": -786,
+   "s": 2.19
+  },
+  {
+   "piece": "cloud",
+   "x": 2217,
+   "y": 0,
+   "h": -717,
+   "s": 2.93
+  },
+  {
+   "piece": "cloud",
+   "x": -99,
+   "y": 1643,
+   "h": -826,
+   "s": 2.23
+  },
+  {
+   "piece": "cloud",
+   "x": 1040,
+   "y": 1378,
+   "h": -780,
+   "s": 2.01
+  },
+  {
+   "piece": "cloud",
+   "x": 2625,
+   "y": 1142,
+   "h": -775,
+   "s": 2.07
+  },
+  {
+   "piece": "cloud",
+   "x": 614,
+   "y": 1508,
+   "h": -706,
+   "s": 2.57
+  },
+  {
+   "piece": "cloud",
+   "x": 344,
+   "y": 817,
+   "h": -708,
+   "s": 2.57
+  },
+  {
+   "piece": "cloud",
+   "x": -561,
+   "y": 958,
+   "h": -837,
+   "s": 2.54
+  },
+  {
+   "piece": "cloud",
+   "x": 569,
+   "y": 1181,
+   "h": -716,
+   "s": 2.76
+  },
+  {
+   "piece": "cloud",
+   "x": 2680,
+   "y": 1900,
+   "h": -770,
+   "s": 2.34
+  },
+  {
+   "piece": "cloud",
+   "x": -300,
+   "y": 300,
+   "h": 80,
+   "s": 1.4
+  },
+  {
+   "piece": "cloud",
+   "x": 2450,
+   "y": 150,
+   "h": 160,
+   "s": 1.2
+  },
+  {
+   "piece": "cloud",
+   "x": 300,
+   "y": -150,
+   "h": 260,
+   "s": 1.5
+  },
+  {
+   "piece": "cloud",
+   "x": 1500,
+   "y": -250,
+   "h": 320,
+   "s": 1.6
+  },
+  {
+   "piece": "cloud",
+   "x": 2300,
+   "y": 900,
+   "h": -40,
+   "s": 1.1
+  },
+  {
+   "piece": "cloud",
+   "x": -250,
+   "y": 1450,
+   "h": -120,
+   "s": 1.3
+  },
+  {
+   "piece": "isle",
+   "x": 400,
+   "y": -120,
+   "h": 120,
+   "s": 0.8
+  },
+  {
+   "piece": "isle",
+   "x": 1900,
+   "y": -200,
+   "h": 220,
+   "s": 1.0
+  },
+  {
+   "piece": "isle",
+   "x": 2550,
+   "y": 600,
+   "h": -200,
+   "s": 0.7
+  },
+  {
+   "piece": "isle",
+   "x": -350,
+   "y": 900,
+   "h": -260,
+   "s": 0.9
+  },
+  {
+   "piece": "isle",
+   "x": 2600,
+   "y": 1450,
+   "h": -420,
+   "s": 0.8
+  }
+ ],
+ "assets": {
+  "Cottage": {
+   "piece": "a_cottage",
+   "rot": 0
+  },
+  "Fountain": {
+   "piece": "a_fountain",
+   "rot": 0
+  },
+  "Pier Portal": {
+   "piece": "a_pier_portal",
+   "rot": 0
+  },
+  "Potion Stall": {
+   "piece": "a_potion_stall",
+   "rot": 0
+  },
+  "Produce Stall": {
+   "piece": "a_produce_stall",
+   "rot": 0
+  },
+  "Quest Board": {
+   "piece": "a_quest_board",
+   "rot": 0
+  },
+  "Sky Gate": {
+   "piece": "a_sky_gate",
+   "rot": 0
+  },
+  "Sky Gate steps": {
+   "piece": "a_sky_gate_steps",
+   "rot": 0
+  },
+  "Tree House": {
+   "piece": "a_tree_house",
+   "rot": 0
+  },
+  "Watchtower": {
+   "piece": "a_watchtower",
+   "rot": 0
+  },
+  "Wolf's Den": {
+   "piece": "a_wolf_den",
+   "rot": 0
+  },
+  "Workshop + waterwheel": {
+   "piece": "a_workshop",
+   "rot": 0
+  },
+  "banner": {
+   "piece": "a_banner",
+   "rot": 0
+  },
+  "barrel": {
+   "piece": "a_barrel",
+   "rot": 0
+  },
+  "bench: back left angled": {
+   "piece": "a_bench",
+   "rot": 145
+  },
+  "bench: back right angled": {
+   "piece": "a_bench",
+   "rot": -145
+  },
+  "bench: front": {
+   "piece": "a_bench",
+   "rot": 0
+  },
+  "bench: front right angled": {
+   "piece": "a_bench",
+   "rot": -35
+  },
+  "bush (island)": {
+   "piece": "a_bush",
+   "rot": 0
+  },
+  "bush (village)": {
+   "piece": "a_bush",
+   "rot": 0
+  },
+  "fence (side-on)": {
+   "piece": "a_fence",
+   "rot": 0
+  },
+  "flag pole": {
+   "piece": "a_flag_pole",
+   "rot": 0
+  },
+  "flower box (pink)": {
+   "piece": "a_flower_box_pink",
+   "rot": 0
+  },
+  "flower box (yellow)": {
+   "piece": "a_flower_box_yellow",
+   "rot": 0
+  },
+  "fruit tree": {
+   "piece": "a_fruit_tree",
+   "rot": 0
+  },
+  "garden bed": {
+   "piece": "a_garden_bed",
+   "rot": 0
+  },
+  "lamp post": {
+   "piece": "a_lamp_post",
+   "rot": 0
+  },
+  "sapling": {
+   "piece": "a_sapling",
+   "rot": 0
+  },
+  "tree C (island)": {
+   "piece": "a_tree",
+   "rot": 0
+  },
+  "wooden crate": {
+   "piece": "a_crate",
+   "rot": 0
+  }
+ },
+ "fence": "fence",
+ "villagers": {
+  "Moki": {
+   "colors": {},
+   "acc": []
+  },
+  "Cytry": {
+   "colors": {
+    "v_fur": "#B0683A",
+    "v_fur_dark": "#6E3A20",
+    "v_belly": "#D99A6A",
+    "v_leaf": "#D8565A"
+   },
+   "acc": [
+    "acc_jacket",
+    "acc_sword"
+   ]
+  },
+  "Dany": {
+   "colors": {
+    "v_fur": "#F0B860",
+    "v_fur_dark": "#C88A40",
+    "v_belly": "#F8D898",
+    "v_leaf": "#5CC4C8"
+   },
+   "acc": [
+    "acc_bandana",
+    "acc_clip"
+   ]
+  },
+  "Akhil": {
+   "colors": {
+    "v_fur": "#F4C040",
+    "v_fur_dark": "#D89A20",
+    "v_belly": "#FBE49A",
+    "v_leaf": "#F6D04A"
+   },
+   "acc": [
+    "acc_banana_hat",
+    "acc_brush"
+   ]
+  }
+ }
+}

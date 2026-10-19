@@ -1,0 +1,841 @@
+{
+ "id": "island",
+ "kind": "map",
+ "model": "kit.glb",
+ "source": "tools/art/kit_island.py (Blender 5.2; after legacy WCW.drawIsland, docs/art/legacy_island_*.png). Steps 4-5: ground, sea, nature, buildings, door marks.",
+ "pivots": "ground_land, bridges, sea: the map origin (map coordinates, 1 m = 100 units); wave, lily, boat: their centre; n_*, a_*: the legacy base point.",
+ "outline": {
+  "width": 0.02,
+  "color": "#14100a",
+  "inks": {
+   "wc_stone": "#8c7a5c",
+   "wc_wall": "#5e5a6e",
+   "wc_rock": "#5a4a52",
+   "wc_wood": "#5a3418",
+   "wc_red": "#6e1e18",
+   "wc_blue": "#1f3460",
+   "wc_water": "#3a7898",
+   "wc_leaf": "#24502c",
+   "wc_gold": "#7a5214",
+   "wc_dark": "#14100a",
+   "wc_cloud": "#9aa6c8",
+   "wc_pave": "none",
+   "wc_lawn": "none"
+  }
+ },
+ "sky": "#9fd0e8",
+ "ground": [
+  "ground_land",
+  "bridges",
+  "sea"
+ ],
+ "place": [
+  {
+   "piece": "wave",
+   "x": 532,
+   "y": 1205,
+   "h": -59,
+   "s": 1.28
+  },
+  {
+   "piece": "wave",
+   "x": 2658,
+   "y": 108,
+   "h": -59,
+   "s": 0.96
+  },
+  {
+   "piece": "wave",
+   "x": 130,
+   "y": 194,
+   "h": -59,
+   "s": 1.31
+  },
+  {
+   "piece": "wave",
+   "x": 69,
+   "y": 867,
+   "h": -59,
+   "s": 0.95
+  },
+  {
+   "piece": "wave",
+   "x": -348,
+   "y": 306,
+   "h": -59,
+   "s": 0.9
+  },
+  {
+   "piece": "wave",
+   "x": 2737,
+   "y": 1478,
+   "h": -59,
+   "s": 1.36
+  },
+  {
+   "piece": "wave",
+   "x": 3018,
+   "y": 1443,
+   "h": -59,
+   "s": 0.98
+  },
+  {
+   "piece": "wave",
+   "x": 22,
+   "y": 1500,
+   "h": -59,
+   "s": 1.36
+  },
+  {
+   "piece": "wave",
+   "x": 3148,
+   "y": 1217,
+   "h": -59,
+   "s": 1.19
+  },
+  {
+   "piece": "wave",
+   "x": 2294,
+   "y": -4,
+   "h": -59,
+   "s": 1.27
+  },
+  {
+   "piece": "wave",
+   "x": 1196,
+   "y": 88,
+   "h": -59,
+   "s": 0.94
+  },
+  {
+   "piece": "wave",
+   "x": 1025,
+   "y": -13,
+   "h": -59,
+   "s": 1.14
+  },
+  {
+   "piece": "wave",
+   "x": 448,
+   "y": 218,
+   "h": -59,
+   "s": 0.94
+  },
+  {
+   "piece": "wave",
+   "x": 919,
+   "y": -139,
+   "h": -59,
+   "s": 1.26
+  },
+  {
+   "piece": "wave",
+   "x": 3033,
+   "y": 556,
+   "h": -59,
+   "s": 1.3
+  },
+  {
+   "piece": "wave",
+   "x": 2959,
+   "y": -205,
+   "h": -59,
+   "s": 0.9
+  },
+  {
+   "piece": "wave",
+   "x": 2502,
+   "y": 1541,
+   "h": -59,
+   "s": 1.25
+  },
+  {
+   "piece": "wave",
+   "x": 2726,
+   "y": 1646,
+   "h": -59,
+   "s": 1.36
+  },
+  {
+   "piece": "wave",
+   "x": 331,
+   "y": 1575,
+   "h": -59,
+   "s": 1.06
+  },
+  {
+   "piece": "wave",
+   "x": 2179,
+   "y": 1,
+   "h": -59,
+   "s": 1.48
+  },
+  {
+   "piece": "wave",
+   "x": 362,
+   "y": 1055,
+   "h": -59,
+   "s": 1.21
+  },
+  {
+   "piece": "wave",
+   "x": 663,
+   "y": 61,
+   "h": -59,
+   "s": 1.28
+  },
+  {
+   "piece": "wave",
+   "x": 4,
+   "y": 195,
+   "h": -59,
+   "s": 0.85
+  },
+  {
+   "piece": "wave",
+   "x": 1917,
+   "y": 921,
+   "h": -59,
+   "s": 1.18
+  },
+  {
+   "piece": "wave",
+   "x": -260,
+   "y": 665,
+   "h": -59,
+   "s": 1.04
+  },
+  {
+   "piece": "wave",
+   "x": -66,
+   "y": -293,
+   "h": -59,
+   "s": 1.5
+  },
+  {
+   "piece": "wave",
+   "x": 37,
+   "y": 362,
+   "h": -59,
+   "s": 0.99
+  },
+  {
+   "piece": "wave",
+   "x": 1750,
+   "y": -130,
+   "h": -59,
+   "s": 1.13
+  },
+  {
+   "piece": "wave",
+   "x": 920,
+   "y": 1533,
+   "h": -59,
+   "s": 0.8
+  },
+  {
+   "piece": "wave",
+   "x": 3091,
+   "y": 835,
+   "h": -59,
+   "s": 1.13
+  },
+  {
+   "piece": "wave",
+   "x": 2010,
+   "y": 351,
+   "h": -59,
+   "s": 0.82
+  },
+  {
+   "piece": "wave",
+   "x": 1405,
+   "y": 1699,
+   "h": -59,
+   "s": 1.32
+  },
+  {
+   "piece": "wave",
+   "x": 530,
+   "y": 1202,
+   "h": -59,
+   "s": 1.39
+  },
+  {
+   "piece": "wave",
+   "x": 880,
+   "y": 236,
+   "h": -59,
+   "s": 1.0
+  },
+  {
+   "piece": "wave",
+   "x": -263,
+   "y": 573,
+   "h": -59,
+   "s": 0.86
+  },
+  {
+   "piece": "wave",
+   "x": -385,
+   "y": 1399,
+   "h": -59,
+   "s": 0.93
+  },
+  {
+   "piece": "wave",
+   "x": 798,
+   "y": 336,
+   "h": -59,
+   "s": 1.1
+  },
+  {
+   "piece": "wave",
+   "x": 93,
+   "y": 1596,
+   "h": -59,
+   "s": 0.88
+  },
+  {
+   "piece": "wave",
+   "x": -280,
+   "y": -18,
+   "h": -59,
+   "s": 1.05
+  },
+  {
+   "piece": "wave",
+   "x": 1191,
+   "y": 1625,
+   "h": -59,
+   "s": 1.49
+  },
+  {
+   "piece": "wave",
+   "x": -243,
+   "y": 875,
+   "h": -59,
+   "s": 0.89
+  },
+  {
+   "piece": "wave",
+   "x": 2814,
+   "y": 898,
+   "h": -59,
+   "s": 0.89
+  },
+  {
+   "piece": "wave",
+   "x": -382,
+   "y": 245,
+   "h": -59,
+   "s": 1.41
+  },
+  {
+   "piece": "wave",
+   "x": 139,
+   "y": 752,
+   "h": -59,
+   "s": 1.06
+  },
+  {
+   "piece": "wave",
+   "x": 842,
+   "y": 1461,
+   "h": -59,
+   "s": 0.95
+  },
+  {
+   "piece": "wave",
+   "x": 2967,
+   "y": 842,
+   "h": -59,
+   "s": 1.44
+  },
+  {
+   "piece": "wave",
+   "x": 1834,
+   "y": 1544,
+   "h": -59,
+   "s": 1.43
+  },
+  {
+   "piece": "wave",
+   "x": 15,
+   "y": 1,
+   "h": -59,
+   "s": 1.17
+  },
+  {
+   "piece": "wave",
+   "x": 678,
+   "y": 1812,
+   "h": -59,
+   "s": 1.01
+  },
+  {
+   "piece": "wave",
+   "x": -87,
+   "y": -186,
+   "h": -59,
+   "s": 0.82
+  },
+  {
+   "piece": "wave",
+   "x": 2217,
+   "y": -65,
+   "h": -59,
+   "s": 1.3
+  },
+  {
+   "piece": "wave",
+   "x": 2719,
+   "y": 1895,
+   "h": -59,
+   "s": 1.37
+  },
+  {
+   "piece": "wave",
+   "x": 646,
+   "y": 1373,
+   "h": -59,
+   "s": 0.88
+  },
+  {
+   "piece": "wave",
+   "x": 710,
+   "y": 1888,
+   "h": -59,
+   "s": 1.13
+  },
+  {
+   "piece": "wave",
+   "x": 564,
+   "y": 1423,
+   "h": -59,
+   "s": 1.12
+  },
+  {
+   "piece": "wave",
+   "x": -387,
+   "y": -236,
+   "h": -59,
+   "s": 0.98
+  },
+  {
+   "piece": "wave",
+   "x": 795,
+   "y": 1758,
+   "h": -59,
+   "s": 0.97
+  },
+  {
+   "piece": "wave",
+   "x": 2660,
+   "y": 1574,
+   "h": -59,
+   "s": 1.09
+  },
+  {
+   "piece": "wave",
+   "x": 3176,
+   "y": 1373,
+   "h": -59,
+   "s": 1.14
+  },
+  {
+   "piece": "wave",
+   "x": 2847,
+   "y": 879,
+   "h": -59,
+   "s": 0.94
+  },
+  {
+   "piece": "wave",
+   "x": 287,
+   "y": 958,
+   "h": -59,
+   "s": 0.82
+  },
+  {
+   "piece": "wave",
+   "x": 2556,
+   "y": 92,
+   "h": -59,
+   "s": 0.87
+  },
+  {
+   "piece": "wave",
+   "x": 1477,
+   "y": 1533,
+   "h": -59,
+   "s": 0.95
+  },
+  {
+   "piece": "wave",
+   "x": 1142,
+   "y": 1807,
+   "h": -59,
+   "s": 0.82
+  },
+  {
+   "piece": "wave",
+   "x": 2704,
+   "y": 15,
+   "h": -59,
+   "s": 1.39
+  },
+  {
+   "piece": "wave",
+   "x": 153,
+   "y": -182,
+   "h": -59,
+   "s": 1.15
+  },
+  {
+   "piece": "wave",
+   "x": 2933,
+   "y": 265,
+   "h": -59,
+   "s": 1.14
+  },
+  {
+   "piece": "wave",
+   "x": 1509,
+   "y": -279,
+   "h": -59,
+   "s": 1.11
+  },
+  {
+   "piece": "wave",
+   "x": 394,
+   "y": -188,
+   "h": -59,
+   "s": 1.29
+  },
+  {
+   "piece": "wave",
+   "x": 1138,
+   "y": 1707,
+   "h": -59,
+   "s": 1.32
+  },
+  {
+   "piece": "wave",
+   "x": -39,
+   "y": 1708,
+   "h": -59,
+   "s": 1.45
+  },
+  {
+   "piece": "wave",
+   "x": 2541,
+   "y": 1526,
+   "h": -59,
+   "s": 1.28
+  },
+  {
+   "piece": "wave",
+   "x": 81,
+   "y": 1295,
+   "h": -59,
+   "s": 1.22
+  },
+  {
+   "piece": "wave",
+   "x": -197,
+   "y": 1109,
+   "h": -59,
+   "s": 1.23
+  },
+  {
+   "piece": "wave",
+   "x": 1442,
+   "y": 1402,
+   "h": -59,
+   "s": 1.41
+  },
+  {
+   "piece": "wave",
+   "x": 972,
+   "y": 1489,
+   "h": -59,
+   "s": 1.15
+  },
+  {
+   "piece": "wave",
+   "x": 2959,
+   "y": 676,
+   "h": -59,
+   "s": 1.47
+  },
+  {
+   "piece": "wave",
+   "x": 818,
+   "y": 1176,
+   "h": -59,
+   "s": 1.44
+  },
+  {
+   "piece": "wave",
+   "x": -120,
+   "y": 751,
+   "h": -59,
+   "s": 1.09
+  },
+  {
+   "piece": "wave",
+   "x": 3150,
+   "y": 683,
+   "h": -59,
+   "s": 1.09
+  },
+  {
+   "piece": "wave",
+   "x": -112,
+   "y": 173,
+   "h": -59,
+   "s": 0.9
+  },
+  {
+   "piece": "wave",
+   "x": 769,
+   "y": 359,
+   "h": -59,
+   "s": 1.48
+  },
+  {
+   "piece": "wave",
+   "x": 348,
+   "y": 1750,
+   "h": -59,
+   "s": 1.01
+  },
+  {
+   "piece": "wave",
+   "x": 334,
+   "y": 1840,
+   "h": -59,
+   "s": 0.86
+  },
+  {
+   "piece": "wave",
+   "x": 6,
+   "y": -18,
+   "h": -59,
+   "s": 0.85
+  },
+  {
+   "piece": "wave",
+   "x": 992,
+   "y": 166,
+   "h": -59,
+   "s": 0.91
+  },
+  {
+   "piece": "wave",
+   "x": -344,
+   "y": 1233,
+   "h": -59,
+   "s": 0.83
+  },
+  {
+   "piece": "wave",
+   "x": 2470,
+   "y": 1573,
+   "h": -59,
+   "s": 0.91
+  },
+  {
+   "piece": "wave",
+   "x": -205,
+   "y": 1064,
+   "h": -59,
+   "s": 1.16
+  },
+  {
+   "piece": "wave",
+   "x": 1476,
+   "y": 1417,
+   "h": -59,
+   "s": 0.92
+  },
+  {
+   "piece": "lily",
+   "x": 994,
+   "y": 522,
+   "h": -59
+  },
+  {
+   "piece": "lily",
+   "x": 840,
+   "y": 1428,
+   "h": -59
+  },
+  {
+   "piece": "boat",
+   "x": 1530,
+   "y": 1476,
+   "h": -60
+  }
+ ],
+ "assets": {
+  "Banana Pile (Hantao)": {
+   "piece": "b_banana_pile",
+   "rot": 0
+  },
+  "Goon Cave": {
+   "piece": "b_goon_cave",
+   "rot": 0
+  },
+  "Hut": {
+   "piece": "b_hut",
+   "rot": 0
+  },
+  "Junkyard": {
+   "piece": "b_junkyard",
+   "rot": 0
+  },
+  "Lighthouse": {
+   "piece": "b_lighthouse",
+   "rot": 0
+  },
+  "Observatory": {
+   "piece": "b_observatory",
+   "rot": 0
+  },
+  "Stone Vault": {
+   "piece": "b_stone_vault",
+   "rot": 0
+  },
+  "Tama Mart": {
+   "piece": "b_tama_mart",
+   "rot": 0
+  },
+  "bees": {
+   "piece": "n_bees",
+   "rot": 0
+  },
+  "bluebells: clump": {
+   "piece": "n_bluebells_clump",
+   "rot": 0
+  },
+  "bluebells: patch": {
+   "piece": "n_bluebells_patch",
+   "rot": 0
+  },
+  "buoy": {
+   "piece": "n_buoy",
+   "rot": 0
+  },
+  "bush (island)": {
+   "piece": "a_bush",
+   "rot": 0
+  },
+  "bush (village)": {
+   "piece": "a_bush",
+   "rot": 0
+  },
+  "butterflies": {
+   "piece": "n_butterflies",
+   "rot": 0
+  },
+  "campfire": {
+   "piece": "n_campfire",
+   "rot": 0
+  },
+  "daisies: patch": {
+   "piece": "n_daisies_patch",
+   "rot": 0
+  },
+  "driftwood": {
+   "piece": "n_driftwood",
+   "rot": 0
+  },
+  "fallen log": {
+   "piece": "n_log",
+   "rot": 0
+  },
+  "fruit tree": {
+   "piece": "a_fruit_tree",
+   "rot": 0
+  },
+  "hay bale": {
+   "piece": "n_hay",
+   "rot": 0
+  },
+  "mushrooms": {
+   "piece": "n_mushrooms",
+   "rot": 0
+  },
+  "pebbles": {
+   "piece": "n_pebbles",
+   "rot": 0
+  },
+  "pine": {
+   "piece": "n_pine",
+   "rot": 0
+  },
+  "pink & white: clump": {
+   "piece": "n_pinkwhite_clump",
+   "rot": 0
+  },
+  "pink & white: patch": {
+   "piece": "n_pinkwhite_patch",
+   "rot": 0
+  },
+  "poppies: clump": {
+   "piece": "n_poppies_clump",
+   "rot": 0
+  },
+  "poppies: patch": {
+   "piece": "n_poppies_patch",
+   "rot": 0
+  },
+  "return pad (island)": {
+   "piece": "b_return_pad",
+   "rot": 0
+  },
+  "rock": {
+   "piece": "n_rock",
+   "rot": 0
+  },
+  "rowboat (small)": {
+   "piece": "n_rowboat",
+   "rot": 0
+  },
+  "sapling": {
+   "piece": "a_sapling",
+   "rot": 0
+  },
+  "tall grass clump": {
+   "piece": "n_grass",
+   "rot": 0
+  },
+  "tree (village)": {
+   "piece": "n_tree_v",
+   "rot": 0
+  },
+  "tree A (island)": {
+   "piece": "n_tree_a",
+   "rot": 0
+  },
+  "tree B (island)": {
+   "piece": "n_tree_b",
+   "rot": 0
+  },
+  "tree C (island)": {
+   "piece": "a_tree",
+   "rot": 0
+  },
+  "tree stump": {
+   "piece": "n_stump",
+   "rot": 0
+  }
+ },
+ "marks": {
+  "open": "mark_open",
+  "beaten": "mark_flag",
+  "locked": "mark_lock"
+ }
+}

@@ -1,0 +1,80 @@
+{
+  "id": "cammy",
+  "kind": "boss",
+  "model": "cammy.glb",
+  "source": "tools/art/cammy_new.py (Blender 5.2, metaballs + bmesh; after the approved 2D src/render2d/cammyNew.js, decision D13: the Cursed Jester P1-2, the Phantom Monarch P3)",
+  "scale": 1,
+  "yaw": 22,
+  "standOn": 0,
+  "outline": {
+    "width": 0.02,
+    "color": "#0b0810"
+  },
+  "inked": [
+    "fur",
+    "glove",
+    "pom",
+    "card",
+    "chain",
+    "crown",
+    "watch",
+    "minion",
+    "flame",
+    "tongue"
+  ],
+  "clips": {
+    "idle": "idle",
+    "roar": "roar",
+    "dying": "dying",
+    "trans_b": "trans_b"
+  },
+  "atk": {
+    "charge": {
+      "wind": 7
+    },
+    "magnet": {
+      "wind": 7
+    },
+    "drop": {
+      "wind": 7
+    },
+    "walls": {
+      "wind": 7
+    },
+    "kiss2": {
+      "wind": 17
+    },
+    "blades": {
+      "wind": 10
+    },
+    "bolts": {
+      "wind": 7
+    },
+    "horse": {
+      "wind": 19
+    }
+  },
+  "forms": {
+    "1": {
+      "hide": [
+        "form.monarch"
+      ]
+    },
+    "2": {
+      "hide": [
+        "form.monarch"
+      ]
+    },
+    "3": {
+      "hide": [
+        "hips"
+      ]
+    }
+  },
+  "sockets": [
+    "socket.head",
+    "socket.chest",
+    "socket.hand",
+    "socket.mouth"
+  ]
+}

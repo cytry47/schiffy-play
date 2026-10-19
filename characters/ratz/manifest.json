@@ -1,0 +1,61 @@
+{
+  "id": "ratz",
+  "kind": "npc",
+  "model": "ratz.glb",
+  "source": "tools/art/ratz.py (Blender 5.2; after legacy ratzDraw, docs/art/legacy_vn_chars.png)",
+  "scale": 1,
+  "yaw": 40,
+  "outline": {
+    "width": 0.012,
+    "color": "#14100a"
+  },
+  "inked": [
+    "fur"
+  ],
+  "clips": {
+    "idle": "idle"
+  },
+  "sockets": [
+    "socket.head",
+    "socket.chest"
+  ],
+  "vn": {
+    "height": 270,
+    "clips": {
+      "neutral": "vn_neutral",
+      "smug": "vn_smug",
+      "scared": "vn_scared",
+      "surprised": "vn_surprised",
+      "happy": "vn_smug",
+      "worried": "vn_scared"
+    },
+    "faces": {
+      "neutral": [
+        "face_neutral"
+      ],
+      "smug": [
+        "face_smug"
+      ],
+      "scared": [
+        "face_scared"
+      ],
+      "surprised": [
+        "face_surprised"
+      ],
+      "happy": [
+        "face_smug"
+      ],
+      "worried": [
+        "face_scared"
+      ]
+    },
+    "blink": {
+      "bones": [
+        "eye.L",
+        "eye.R"
+      ],
+      "every": 4.1,
+      "from": 3.96
+    }
+  }
+}
