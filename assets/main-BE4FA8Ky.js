@@ -45,6 +45,7 @@ body.v2dmap #wui .dlg,body.v2dmap #wui .msg,body.v2dmap #wui .mapname,body.v2dma
 #wui .vn .vnbox{bottom:3vh;transform:translateX(-50%) scale(var(--vk,1));transform-origin:50% 100%;width:min(920px,calc(94vw / var(--vk,1)));min-height:190px;padding:26px 40px;font-size:30px}
 #wui .vn .vnname{top:-54px;font-size:26px}
 #wui .vn .next{font-size:26px}
+#wui .vn .skip,#wui .vn .hostread{transform:scale(var(--vk,1));transform-origin:100% 0}
 #wui .rest{visibility:hidden}
 #wui .next{position:absolute;right:18px;bottom:10px;color:#b3261e;font-size:20px}
 #wui .hostread{position:absolute;right:16px;top:14px;padding:6px 14px;font:italic 700 15px Georgia,serif;color:#f6ecd0;background:rgba(20,16,10,.6);border-radius:9px}
