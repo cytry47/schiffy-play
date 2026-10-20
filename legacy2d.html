@@ -17839,7 +17839,7 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
 })();
 </script><script>/* The Banana Brute: Hanato's new 2D look for phase 1 (spec docs/art/hanato_2d_spec.md, reference docs/art/hanato_ref_p1_brute.png).
    NOT legacy code: the vite plugin legacy2d puts this right before bridge.js in legacy2d.html; bridge.js swaps it in for
-   legacy's phase-1 body in bossDrawHanato (phase 2, the Baldtao head, stays legacy's, unchanged).
+   legacy's phase-1 body in bossDrawHanato; phase 2's Baldtao head (D30) replaces legacy's head sprite (drawHead, below).
    Cuphead 1930s rubber hose, drawn procedurally on canvas: a tanuki in a banana suit. The banana is his whole torso and hood,
    the face opening is peeled open, three thick peel flaps hang off it (one per shoulder, one behind) and sway on springs;
    black noodle arms and bowed legs grow out of the suit (ONE silhouette, one ink line), big puffy white Cuphead gloves (the
@@ -18264,7 +18264,241 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
   /** For the art tools: one pose (no springs). */
   function drawPose(c, f, T, fl) { const P = poseOf(f, T); drawFig(c, P, T, fl); return P.name; }
 
-  window.HanatoNew = { ok: true, stats, drawFight, drawBurst, drawPose, poseOf };
+
+  /* ================= Baldtao (phase 2, D30): redrawn to match the 3D Baldtao (tools/art/hanato_pack/baldtao_final.js) =================
+     The 3D model's own datum = the laser image's pixels (docs/art/legacy_hanato_laser.png): face centre x 200, chin y ~474,
+     bald top y -62, ears at x 200 +- 214. Same colours (its SLOTS). Toon: one smooth head outline (a broad rounded chin, full
+     cheeks in one convex curve up to the widest at the eyes, a round high bald dome; no dent, no ledge under the lips), the
+     ears joined into the same silhouette, thick dark brows (stern, calm: no scowl), almond eyes with pie-cut pupils behind thin
+     round wire glasses, a defined nose, full lips, the legacy blush. Turned a little toward the player (left), like the 3D one.
+     Lasers / beams are attack effects drawn elsewhere. Size: the data (R2 below); legacy's htDrawHead sets the
+     place, the hurt jolt and any legacy pose (f.hpose) first. drawHead(c, f, fl, T): c at the head centre. */
+  const BSKIN = '#dda07a', BSKIN_D = '#c4825c', BSKIN_L = '#f0c39e', BBLUSH = '#e88d84', BBROW = '#2a1a12', BWIRE = '#c9a35a';
+  const BSCL = '#fbf6ec', BPUP = '#0b0810', BLIP = '#c76f68', BLIPL = '#4a1c18', BNOS = '#5a2c20', BEARIN = '#c9806a', BGLOW = '#ff5fae';
+  const HCX = 200; let HCY = 258;   // the head centre in the datum (HCY: set below from the size)
+  // look-only copies of the port's P2 timings (src/data/bosses.json HT.p2; legacy's HT in this page has not got them)
+  const P2D = { dive: { tele: 1.0, diveT: 0.45, stay: 1.2 }, beam: { moveT: 0.6, charge: 1.3, beamT: 1.2 },
+    ha: { tele: 0.5, gap: 0.75, n: 4 }, ufo: { tele: 0.8 }, pyr: { tele: 0.8, every: 2.0, eyeT: 0.7, n: 3, beamT: 0.5 } };
+  // Size and shape (fix round): drawn to the port's data like the 3D head: HT.p2.r = 185 (look-only copy; this page's legacy HT
+  // has its old r 90), so the head is 2r wide (ears out) and the chin sits r below the centre (the hit circle's bottom = the
+  // floor in the dive). Proportions measured from the 3D frame (docs/art/d30_art.png): width / height ~0.81, broad full
+  // cheeks down to the mouth, a broad rounded chin, ears ~0.21 of the head height, eyes ~0.4 of the width apart, lenses ~0.34.
+  const R2 = 185, OXL = 230, NEARO = 0.94, OX = -7;   // far half width (datum), the near side's outline a little narrower, centring
+  const SC = (2 * R2) / (OXL * (1 + NEARO)), CHIN = 481;
+  HCY = CHIN - R2 / SC;
+  // the turn toward the player (TN 0 = the usual slight 3/4; 1 = turned hard toward the beam side, the mouth near the edge)
+  let TN = 0;
+  const NEARf = () => 0.9 - 0.3 * TN, FARf = () => 1 + 0.1 * TN, SHIFTf = () => -12 - 98 * TN;
+  const tx = (x) => { const u = (x - HCX) * 1.08; return (u < 0 ? u * NEARf() : u * FARf()) + SHIFTf(); };
+  const ty = (y) => y - HCY;
+  // the head outline: half widths down the face (convex all the way: |slope| only grows toward the chin)
+  const HEADR = (() => {
+    const R = [];
+    for (let a = 0; a <= 90; a += 10) { const th = (a * Math.PI) / 180; R.push([100 - 162 * Math.cos(th), OXL * (0.97 + 0.03 * Math.sin(th)) * Math.sin(th)]); }   // a round high dome
+    return R.concat([[150, 1.0], [229, 1.0], [270, 0.985], [308, 0.95], [340, 0.91], [365, 0.86], [390, 0.79], [415, 0.7], [436, 0.6], [453, 0.49], [466, 0.37], [474, 0.25], [479, 0.12], [CHIN, 0]]
+      .map(([y, k]) => [y, k * OXL]));
+  })();
+  function headPath() {   // both sides (the far right side at full width, the near left side a little narrower), through the shared smoother
+    const pts = [];
+    for (const [y, w] of HEADR) pts.push([w + OX, ty(y)]);
+    for (let i = HEADR.length - 2; i > 0; i--) { const [y, w] = HEADR[i]; pts.push([-w * NEARO + OX, ty(y)]); }
+    const p = new Path2D(); smoothInto(p, pts); return p;
+  }
+  const HEAD = headPath();
+  const ellP = (x, y, rx, ry, rot) => { const p = new Path2D(); p.ellipse(x, y, rx, ry, rot || 0, 0, TAU); return p; };
+  // ears: the near one (left) partly behind the cheek (gone when he turns hard), the far one whole, coming round as he turns
+  const earX = () => [-OXL * NEARO + OX + 4, OXL + OX + 14 - 50 * TN];
+  /** a ribbon along a polyline: half thickness rf(u) (u 0..1 from the first point) */
+  function ribbon(pts, rf) {
+    const n = 24, P = [], L = [], R = [];
+    for (let i = 0; i <= n; i++) {   // Catmull-Rom through the points
+      const s = (i / n) * (pts.length - 1), k = Math.min(pts.length - 2, Math.floor(s)), u = s - k;
+      const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(pts.length - 1, k + 2)];
+      const cr = (a, b, c2, d) => 0.5 * (2 * b + (-a + c2) * u + (2 * a - 5 * b + 4 * c2 - d) * u * u + (-a + 3 * b - 3 * c2 + d) * u * u * u);
+      P.push([cr(p0[0], p1[0], p2[0], p3[0]), cr(p0[1], p1[1], p2[1], p3[1])]);
+    }
+    for (let i = 0; i <= n; i++) {
+      const a = P[Math.max(0, i - 1)], b = P[Math.min(n, i + 1)], [nx, ny] = nrm(-(b[1] - a[1]), b[0] - a[0]), r = rf(i / n);
+      L.push([P[i][0] + nx * r, P[i][1] + ny * r]); R.push([P[i][0] - nx * r, P[i][1] - ny * r]);
+    }
+    const p = new Path2D(); p.moveTo(L[0][0], L[0][1]); for (const q of L) p.lineTo(q[0], q[1]); for (let i = R.length - 1; i >= 0; i--) p.lineTo(R[i][0], R[i][1]); p.closePath(); return p;
+  }
+  const browR = (u) => 1.45 * (u < 0.25 ? lerp(7.5, 10.5, u / 0.25) : u < 0.6 ? lerp(10.5, 9, (u - 0.25) / 0.35) : lerp(9, 3.5, (u - 0.6) / 0.4));
+  const BROWS = [[[148, 124], [122, 110], [92, 108], [66, 114], [50, 124]], [[252, 122], [280, 106], [312, 104], [336, 110], [350, 120]]];
+  const EYES = [[115, 188], [283, 183]], LENS = [[113, 188], [287, 184]];
+
+  /** The pose / face for this frame (draw only, from the port's attack clock). */
+  function baldPose(f, T) {
+    const P = { name: 'idle', eye: 'norm', mouth: 'calm', rot: 0.035 * Math.sin(T * 1.6), dx: 0, sx: 1, sy: 1, lookX: -5, lookY: 0, brow: 0, glint: 0, glow: 0, puff: 0 };
+    if ((T * 0.31) % 1 < 0.04) P.eye = 'shut';   // a slow blink
+    const a = f.state === 'atk' ? f.atk : null, at = a ? a.t : 0, n = a ? a.name : '';
+    if (f.state === 'xform' || f.xform) { P.name = 'xform'; return P; }
+    if (n === 'dive' || n === 'bonk') {
+      const B = P2D.dive, t1 = B.tele + B.diveT, t2 = t1 + B.stay;
+      if (at < B.tele) { const k = sm(at / B.tele); P.name = 'dive:tele'; P.rot = 0.28 * k; P.eye = 'narrow'; P.mouth = 'tight'; P.lookY = 7; P.lookX = -8; P.brow = -3 * k; P.dx = Math.sin(T * 55) * 3 * k; }
+      else if (at < t1) { const u = (at - B.tele) / B.diveT; P.name = 'dive:spin'; P.rot = u * u * TAU * 2; P.sx = 0.92; P.sy = 1.1; P.eye = 'narrow'; P.mouth = 'tight'; }
+      else if (at < t2) {
+        const k = (at - t1) / B.stay, q = Math.max(0, 1 - k * 5); P.name = 'dive:dizzy'; P.eye = 'dizzy'; P.mouth = 'o'; P.rot = Math.sin(T * 6) * 0.12; P.dx = Math.sin(T * 9) * 3;
+        P.sx = 1 + 0.2 * q; P.sy = 1 - 0.18 * q; P.brow = 4;
+      } else P.name = 'dive:rise';
+    } else if (n === 'beam' || n === 'laser') {
+      const B = P2D.beam, tc = B.moveT + B.charge, te = tc + B.beamT;
+      // the beam leaves 0.8 r out on the side it fires (the data): he turns that way and tips the chin into it,
+      // and the shout mouth opens wide: its near edge sits on the beam's start (0.8 r out), the beam's height inside it (side -1 = he fires right: the head mirrored)
+      const d = a.d || {}, k0 = at < B.moveT ? 0 : at < tc ? sm((at - B.moveT) / 0.5) : at < te ? 1 : 1 - sm((at - te) / 0.5);
+      P.flip = d.side === -1; P.turn = k0; P.rot = 0.1 * k0; P.lookX = -9 * k0 - 5 * (1 - k0);
+      if (at < B.moveT) P.name = 'beam:move';
+      else if (at < tc) { const k = (at - B.moveT) / B.charge; P.name = 'beam:charge'; P.eye = 'narrow'; P.mouth = 'tight'; P.puff = sm(k * 2); P.glow = k; P.dx = Math.sin(T * 50) * 2.5 * k; P.brow = -3; }
+      else if (at < te) { P.name = 'beam:fire'; P.eye = 'narrow'; P.mouth = 'beam'; P.glow = 1; P.sx = 1.03; P.sy = 0.98; P.dx = Math.sin(T * 40) * 2; P.brow = -3; }
+      else P.name = 'beam:back';
+    } else if (n === 'ha' || n === 'glint') {
+      const B = P2D.ha; P.name = 'ha:tele';
+      if (at < B.tele) { P.glint = at / B.tele; P.lookX = -8; }
+      else {
+        const i = Math.floor((at - B.tele) / B.gap), u = at - B.tele - i * B.gap;
+        if (i < B.n && u < 0.4) { P.name = 'ha:laugh'; P.mouth = 'ha'; P.eye = 'shut'; P.brow = 4; P.rot = -0.06 + 0.05 * Math.sin(T * 30); P.sy = 1.03; P.glint = 1 - u / 0.4; }
+        else P.name = 'ha:wait';
+      }
+    } else if (n === 'ufo' || n === 'shine') {
+      const B = P2D.ufo; P.name = at < B.tele ? 'ufo:tele' : 'ufo:watch'; P.lookY = -6; P.lookX = -3; P.brow = 2;
+      P.glint = at < B.tele ? sm(at / B.tele) : 0.5 + 0.5 * Math.sin(T * 8);
+    } else if (n === 'pyramid' || n === 'orbit') {
+      const B = P2D.pyr; P.name = 'pyramid:calm'; P.eye = 'shut'; P.rot = 0.02 * Math.sin(T * 1.2);
+      for (let i = 0; i < B.n; i++) { const te = B.tele + i * B.every + B.eyeT; if (at >= te - 0.25 && at < te + B.beamT) { P.name = 'pyramid:fire'; P.eye = 'norm'; P.glint = clamp(1 - Math.abs(at - te) / 0.5, 0, 1); } }
+    }
+    if (f.hit > 0.02) { P.eye = 'wince'; P.mouth = 'o'; P.brow = 3; P.name = P.name === 'idle' ? 'hurt' : P.name + '+hurt'; }
+    return P;
+  }
+
+  function paintBald(c, P, t, lw) {
+    const ink = (p, fill, w) => { c.lineJoin = 'round'; c.lineWidth = w; c.strokeStyle = INK; c.stroke(p); if (fill) { c.fillStyle = fill; c.fill(p); } };
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    TN = P.turn || 0;
+    const EARX = earX(), EARS = [ellP(EARX[1], ty(180), 30, 56, -0.1)];
+    if (TN < 0.6) EARS.push(ellP(EARX[0], ty(180), 22 * (1 - TN), 50, 0.1));
+    // one silhouette: the head and both ears stroked together, then filled together (no ink where they join)
+    c.lineWidth = lw * 2; c.strokeStyle = INK; for (const p of EARS) c.stroke(p); c.stroke(HEAD);
+    c.fillStyle = BSKIN; for (const p of EARS) c.fill(p); c.fill(HEAD);
+    c.fillStyle = BEARIN; c.fill(ellP(EARX[1] + 8, ty(182), 14, 34, -0.1)); if (TN < 0.6) c.fill(ellP(EARX[0] - 2, ty(182), 9 * (1 - TN), 28, 0.1));
+    // flat toon shading (light from the upper left): a shade band down the far side and under the jaw, a dome highlight
+    c.save(); c.clip(HEAD);
+    c.fillStyle = BSKIN_D; c.fill(HEAD);
+    c.fillStyle = BSKIN; c.beginPath(); c.ellipse(-40, ty(200), 240, 270, 0.08, 0, TAU); c.fill();
+    c.fillStyle = BSKIN_L; c.beginPath(); c.ellipse(-80, ty(20), 80, 38, -0.45, 0, TAU); c.fill();
+    c.fillStyle = '#f8dcc0'; c.beginPath(); c.ellipse(-104, ty(10), 24, 11, -0.45, 0, TAU); c.fill();
+    if (P.puff > 0) { c.fillStyle = BSKIN_L; c.globalAlpha = 0.5 * P.puff; for (const x of [100, 300]) { c.beginPath(); c.ellipse(tx(x), ty(318), 34, 26, 0, 0, TAU); c.fill(); } c.globalAlpha = 1; }
+    c.fillStyle = BBLUSH; c.globalAlpha = 0.75;   // the blush (legacy's)
+    for (const [x, y] of [[100, 302], [300, 300]]) { c.beginPath(); c.ellipse(tx(x), ty(y), (x < HCX ? NEARf() : 1) * (40 + 6 * P.puff), 17 + 3 * P.puff, 0, 0, TAU); c.fill(); }
+    c.globalAlpha = 1;
+    c.restore();
+    c.lineWidth = lw * 2; c.strokeStyle = INK; c.stroke(HEAD);   // the outline over the shading (the ears sit behind: their join stays clean)
+    // ---- eyes (behind the lenses) ----
+    EYES.forEach(([x0, y0], i) => {
+      const x = tx(x0), y = ty(y0), w = i ? 30 : 27;
+      if (P.eye === 'shut' || P.eye === 'wince') {   // closed: a calm down-curved lid line (wince: squeezed into a chevron)
+        c.lineWidth = 9; c.strokeStyle = INK; c.beginPath();
+        if (P.eye === 'shut') { c.moveTo(x - w, y - 2); c.quadraticCurveTo(x, y + 12, x + w, y - 2); }
+        else { c.moveTo(x - w, y - 6); c.lineTo(x + (i ? -6 : 6), y + 3); c.lineTo(x + w, y - 6); }
+        c.stroke(); return;
+      }
+      if (P.eye === 'dizzy') {
+        ink(ellP(x, y, w + 2, 20), BSCL, 7);
+        c.lineWidth = 4; c.strokeStyle = BPUP; c.beginPath();
+        for (let k = 0; k <= 44; k++) { const a = k * 0.4 + t * 9 * (i ? 1 : -1), r = k * 0.4; c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.85); }
+        c.stroke(); return;
+      }
+      const hy = P.eye === 'narrow' ? 10 : 17, alm = ellP(x, y + (17 - hy) * 0.4, w, hy);
+      ink(alm, BSCL, 7);
+      c.save(); c.clip(alm);
+      const px = x + P.lookX, py = y + P.lookY, wg = Math.PI / 3;   // the pie-cut pupil (the house Cuphead eye)
+      c.fillStyle = BPUP; c.beginPath(); c.moveTo(px, py); c.arc(px, py, 12, -Math.PI / 2 + wg / 2, -Math.PI / 2 - wg / 2 + TAU); c.closePath(); c.fill();
+      c.restore();
+      // the heavy upper lid (lowered for a glare)
+      c.lineWidth = 10; c.strokeStyle = BBROW; c.beginPath();
+      const ly = P.eye === 'narrow' ? y - 4 : y - 13;
+      c.moveTo(x - w - 4, ly + 9); c.quadraticCurveTo(x - 4, ly - 9, x + w + 4, ly + 7); c.stroke();
+    });
+    // ---- brows: thick dark bars, heaviest in the middle, inner ends low (stern and calm, never a scowl) ----
+    BROWS.forEach((pts, i) => {
+      const q = pts.map(([x, y], k) => [tx(x), ty(y) - 8 - P.brow * (k === 0 ? 1.4 : 1)]);
+      ink(ribbon(q, (u) => browR(u) * (i ? 1 : 0.92)), BBROW, 5);
+    });
+    // ---- nose: a bridge line on the near side, a round tip with two nostril wings ----
+    c.lineWidth = 6.5; c.strokeStyle = INK;
+    c.beginPath(); c.moveTo(tx(192), ty(214)); c.bezierCurveTo(tx(186), ty(240), tx(182), ty(258), tx(186), ty(268)); c.stroke();
+    {
+      const tip = new Path2D(); tip.arc(tx(209), ty(272), 19, 0, TAU); tip.moveTo(tx(190) + 11, ty(284)); tip.arc(tx(190), ty(284), 11, 0, TAU); tip.moveTo(tx(229) + 11, ty(284)); tip.arc(tx(229), ty(284), 11, 0, TAU);
+      c.lineWidth = 6.5; c.strokeStyle = INK; c.stroke(tip); c.fillStyle = BSKIN; c.fill(tip);
+      c.fillStyle = BSKIN_L; c.beginPath(); c.ellipse(tx(203), ty(265), 7, 4.5, -0.4, 0, TAU); c.fill();
+      c.fillStyle = BNOS; for (const x of [200, 219]) { c.beginPath(); c.ellipse(tx(x), ty(289), 6, 3.4, 0, 0, TAU); c.fill(); }
+    }
+    // ---- mouth: full lips (calm), pressed shut (charge), or open for an attack ----
+    const mx = tx(200), my = ty(366);
+    if (P.mouth === 'calm' || P.mouth === 'tight') {
+      const k = P.mouth === 'tight' ? 0.7 : 1;
+      const up = new Path2D(); up.moveTo(mx - 50, my - 3); up.bezierCurveTo(mx - 34, my - 13 * k, mx - 14, my - 15 * k, mx, my - 10 * k); up.bezierCurveTo(mx + 14, my - 15 * k, mx + 34, my - 13 * k, mx + 50, my - 3); up.quadraticCurveTo(mx, my + 2, mx - 50, my - 3); up.closePath();
+      const lo = new Path2D(); lo.moveTo(mx - 45, my); lo.quadraticCurveTo(mx, my + 3, mx + 45, my); lo.bezierCurveTo(mx + 34, my + 18 * k, mx - 34, my + 18 * k, mx - 45, my); lo.closePath();
+      ink(lo, BLIP, 5); ink(up, BLIP, 5);
+      c.fillStyle = '#e39890'; c.beginPath(); c.ellipse(mx + 6, my + 9 * k, 14, 3.5 * k, 0, 0, TAU); c.fill();
+      c.lineWidth = 5; c.strokeStyle = BLIPL; c.beginPath(); c.moveTo(mx - 51, my - 2); c.quadraticCurveTo(mx, my + 3, mx + 51, my - 2); c.stroke();
+      if (P.glow > 0) {   // the beam charging behind the shut lips
+        c.save(); c.globalAlpha = 0.35 + 0.5 * P.glow * (0.7 + 0.3 * Math.sin(t * 30)); c.strokeStyle = BGLOW; c.lineWidth = 6;
+        c.beginPath(); c.moveTo(mx - 40, my - 1); c.quadraticCurveTo(mx, my + 3, mx + 40, my - 1); c.stroke(); c.restore();
+      }
+    } else {
+      const big = P.mouth === 'beam' ? [55, 40] : P.mouth === 'ha' ? [42, 30] : [18, 16], m = new Path2D();
+      if (P.mouth === 'ha') { m.moveTo(mx - big[0], my - 8); m.quadraticCurveTo(mx, my - 14, mx + big[0], my - 8); m.bezierCurveTo(mx + big[0], my + 34, mx - big[0], my + 34, mx - big[0], my - 8); m.closePath(); }
+      else m.ellipse(mx, my + 4, big[0], big[1], 0, 0, TAU);
+      c.lineWidth = 16; c.strokeStyle = INK; c.stroke(m); c.lineWidth = 9; c.strokeStyle = BLIP; c.stroke(m);   // the lips as a rim
+      c.fillStyle = '#3a1418'; c.fill(m);
+      c.save(); c.clip(m);
+      if (P.mouth === 'beam') { c.fillStyle = BGLOW; c.beginPath(); c.ellipse(mx, my + 4, big[0] * 0.72, big[1] * 0.72, 0, 0, TAU); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.ellipse(mx, my + 4, big[0] * 0.36, big[1] * 0.36, 0, 0, TAU); c.fill(); }
+      else { c.fillStyle = '#d35a6e'; c.beginPath(); c.ellipse(mx + 4, my + big[1] * 0.9, big[0] * 0.6, 12, 0, 0, TAU); c.fill(); if (P.mouth === 'ha') { c.fillStyle = BSCL; c.fillRect(mx - big[0], my - 16, big[0] * 2, 12); } }
+      c.restore();
+    }
+    // ---- glasses: thin round wire rims, a bridge arching over the nose, the arms running back to the ears ----
+    const LR = 76, rims = LENS.map(([x, y]) => [tx(x), ty(y), LR * 1.08 * (x < HCX ? NEARf() : FARf())]);
+    c.save(); c.globalAlpha = 0.12 + 0.3 * P.glint; c.fillStyle = '#ffffff'; for (const [x, y, r] of rims) { c.beginPath(); c.ellipse(x, y, r, LR, 0, 0, TAU); c.fill(); } c.restore();
+    const wire = new Path2D();
+    for (const [x, y, r] of rims) { wire.moveTo(x + r, y); wire.ellipse(x, y, r, LR, 0, 0, TAU); }
+    wire.moveTo(rims[0][0] + rims[0][2] - 2, ty(178)); wire.quadraticCurveTo(tx(200), ty(162), rims[1][0] - rims[1][2] + 2, ty(176));
+    if (TN < 0.6) { wire.moveTo(rims[0][0] - rims[0][2], ty(184)); wire.lineTo(EARX[0] + 4, ty(160)); }
+    wire.moveTo(rims[1][0] + rims[1][2], ty(180)); wire.lineTo(EARX[1] - 8, ty(158));
+    c.lineWidth = 11; c.strokeStyle = INK; c.stroke(wire); c.lineWidth = 5.5; c.strokeStyle = BWIRE; c.stroke(wire);
+    // lens shine: a white streak; the glint / shine attacks flash a sparkle on the rims
+    c.lineWidth = 7; c.strokeStyle = '#ffffff'; c.globalAlpha = 0.55 + 0.45 * P.glint;
+    for (const [x, y, r] of rims) { c.beginPath(); c.ellipse(x, y, r - 16, LR - 16, 0, -2.5, -1.9); c.stroke(); }
+    c.globalAlpha = 1;
+    if (P.glint > 0.05) for (const [x, y, r] of rims) {
+      const sx = x - r * 0.55, sy = y - 50, R = 34 * P.glint;
+      c.fillStyle = '#fffbe6'; c.beginPath();
+      c.moveTo(sx, sy - R); c.quadraticCurveTo(sx, sy, sx + R * 0.7, sy); c.quadraticCurveTo(sx, sy, sx, sy + R); c.quadraticCurveTo(sx, sy, sx - R * 0.7, sy); c.quadraticCurveTo(sx, sy, sx, sy - R);
+      c.closePath(); c.fill();
+    }
+  }
+
+  /* the hit flash: the whole head washed white as one shape (like the 3D's 0.55 flash; the wince still reads through) */
+  const bc = document.createElement('canvas'), bg = bc.getContext('2d');
+  function drawBaldFig(c, P, t, fl) {
+    const s = SC, lw = 11 / s / 2;   // datum px -> world: the data's head size (R2)
+    c.save(); c.translate(P.dx, 0); if (P.flip) c.scale(-1, 1); c.rotate(P.rot); c.scale(s * P.sx, s * P.sy);
+    if (!fl) { try { paintBald(c, P, t, lw); } finally { c.restore(); } return; }
+    const m = c.getTransform(), q = Math.min(1.2, Math.max(0.3, Math.hypot(m.a, m.b))), X0 = -300, Y0 = -360, W = 600, H = 620;
+    const w = Math.ceil(W * q), h = Math.ceil(H * q);
+    if (bc.width !== w || bc.height !== h) { bc.width = w; bc.height = h; }
+    bg.setTransform(1, 0, 0, 1, 0, 0); bg.globalCompositeOperation = 'source-over'; bg.clearRect(0, 0, w, h);
+    bg.setTransform(q, 0, 0, q, -X0 * q, -Y0 * q); paintBald(bg, P, t, lw);
+    bg.setTransform(1, 0, 0, 1, 0, 0); bg.globalCompositeOperation = 'source-atop'; bg.fillStyle = 'rgba(255,255,255,0.62)'; bg.fillRect(0, 0, w, h); bg.globalCompositeOperation = 'source-over';
+    c.imageSmoothingEnabled = true; c.drawImage(bc, X0, Y0, W, H); c.restore();
+  }
+  /** Phase 2's head (in place of legacy's head sprite, inside legacy's htDrawHead): c at the head centre. */
+  function drawHead(c, f, fl, T) {
+    const P = baldPose(f, T);
+    stats.draws++; stats.last = P.name; stats.seen[P.name] = (stats.seen[P.name] || 0) + 1;
+    drawBaldFig(c, P, T, fl);
+  }
+
+  window.HanatoNew = { ok: true, stats, drawFight, drawBurst, drawPose, poseOf, drawHead, baldPose };
 })();
 </script><script>/* The golden rose: the tutorial's end prize in the 2D view (Ruben 2026-10-18: the whole rose instead of legacy's single
    golden petal; the 3D view has the same rose in assets/env/tutorial/kit.glb, piece 'petal').
@@ -18484,7 +18718,7 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
   }
   bossDraw = function (c) { bossDraw0(c); if (p2) drawP2(c); if (zonesOv) drawZones(c, zonesOv); };
   const exFx0 = exFxDraw;   // levels have no bossDraw: player 2 goes in right before player 1's EX layer 0 (pDraw :916)
-  exFxDraw = function (c, layer) { if (layer === 0 && !bossRun && p2) drawP2(c); exFx0(c, layer); };
+  exFxDraw = function (c, layer) { if (layer === 0 && !bossRun && p2) drawP2(c); exFx0(c, layer); if (layer === 1 && bossRun && mkPh && bossId === 'boss4') drawPh(c, mkPh.filter(mkStone)); };
   petalDone = function () {};   // the port runs the story (legacy pFrame calls this 1.8 s after the petal)
   /* the fight title follows the phase (bossRun.name = the port's title, set in boss()); legacy's Cammy title is a fixed
      'Cammyyy <emote> Initiator', so its name line is drawn as plain text like every other boss */
@@ -18900,17 +19134,25 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
   const ratDrawHandful0 = ratDrawHandful;
   ratDrawHandful = function (c, f) { ratDrawHandful0(c, f); if (rtPh && f.hp > 0) drawPh(c, rtPh); };
   const mokiDrawItems0 = mokiDrawItems;
-  mokiDrawItems = function (c, f) { mokiDrawItems0(c, f); if (mkPh && f.hp > 0) drawPh(c, mkPh); };
+  // the stone shell (Record Scratch, D30) goes over the dogs: legacy draws them after the boss, so it waits for player 1's
+  // EX layer 1 (pDraw :921, right after the dog; player 2 is drawn before player 1)
+  const mkStone = (q) => q.k === 'art' && q.art === 'stoneshell';
+  mokiDrawItems = function (c, f) { mokiDrawItems0(c, f); if (mkPh && f.hp > 0) drawPh(c, mkPh.filter((q) => !mkStone(q))); };
   /* phase 1: the Banana Brute (src/render2d/hanatoNew.js, spec docs/art/hanato_2d_spec.md) instead of legacy's body; the
      transformation's swell too (legacy's htDrawXform calls this with f.xform = 0, then draws its cracks), and the burst adds
-     the three flaps flying off on top of legacy's sequence. Phase 2 (the Baldtao head): legacy's, unchanged. */
+     the three flaps flying off on top of legacy's sequence. Phase 2 (the Baldtao head, D30): legacy's htDrawHead places and
+     poses it, its head sprite is swapped for hanatoNew.js drawHead (the head redrawn to match the 3D Baldtao). */
   const bossDrawHanato0 = bossDrawHanato;
+  let htHeadF = null;   // the fight whose head legacy's htDrawHead is drawing (its sprite call has no f)
   bossDrawHanato = function (c, f, fl, p2) {
     const N = window.HanatoNew && HanatoNew.ok ? HanatoNew : null;
     if (N && f.phase < 2 && !f.xform) return N.drawFight(c, f, fl, T);
-    bossDrawHanato0(c, f, fl, p2);
+    htHeadF = f;
+    try { bossDrawHanato0(c, f, fl, p2); } finally { htHeadF = null; }
     if (N && f.xform && f.phase < 2) N.drawBurst(c, f, T);
   };
+  const htDrawHeadSprite0 = htDrawHeadSprite;
+  htDrawHeadSprite = function (c, fl) { const N = window.HanatoNew && HanatoNew.ok && HanatoNew.drawHead ? HanatoNew : null; if (N && htHeadF) return N.drawHead(c, htHeadF, fl, T); htDrawHeadSprite0(c, fl); };
   const htDraw0 = htDraw;
   // the Banana Brute draws the glove punch himself (hanatoNew.js, on the same hazard): the placeholder arm / glove boxes are left out
   const htGlovePh = (q) => (q.k === 'line' && q.col === '#d9b23a') || (q.k === 'box' && (q.col === '#d8412f' || q.col === '#ffffff'));
