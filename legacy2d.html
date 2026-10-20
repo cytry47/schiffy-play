@@ -19454,10 +19454,10 @@ window.MONARCH_PARTS = {"jewels":[[-10.0,-447.0,8],[-44.0,-431.0,8],[27.5,-430.5
   const ghost0 = pDrawGhost;
   pDrawGhost = function (c) { if (stReal == null) return ghost0(c); const k = P.st; P.st = stReal; ghost0(c); P.st = k; };
   const bossDraw0 = bossDraw;
-  let zonesOv = null;   // the B-key overlay (D24, the port's bossZones): hit shape yellow, body-contact zones red
+  let zonesOv = null;   // the B-key overlay (D24, the port's bossZones): hit shape yellow, body-contact zones red, a bite cut out of one green (D41)
   function drawZones(c, z) {
     c.save(); c.lineWidth = 3;
-    [[z.hit, '#ffcc33'], ...z.zones.map((q) => [q, '#ff3344'])].forEach(([q, col]) => {
+    [[z.hit, '#ffcc33'], ...z.zones.flatMap((q) => (q.bite ? [[q, '#ff3344'], [q.bite, '#33dd66']] : [[q, '#ff3344']]))].forEach(([q, col]) => {
       c.strokeStyle = col; c.beginPath();
       if (q.r != null) c.arc(q.x, q.y, q.r, 0, 7); else c.rect(q.x0, q.y0, q.x1 - q.x0, q.y1 - q.y0);
       c.stroke(); });
