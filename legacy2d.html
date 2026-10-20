@@ -18748,6 +18748,31 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
     try { drawPetal0(g, t, d); } finally { g.drawImage = di; }
   };
 
+  /* ---- Eggu Island doors (Ruben 2026-10-19): the Lighthouse (Magpie, boss8) and the Observatory (Stargazer, boss9) are
+     boss doors, the Stone Vault is the new Bruce (boss10) and opens after all 6. Legacy's SPOT_DEFS and doorMark live inside
+     its island closure (07_eggu_island.js :1823-1859), so the doors are added here: the same mark / prompt as legacy's own. ---- */
+  {
+    const NEED = 6, LABEL = { open: 'FIGHT', beaten: 'CLEARED', locked: 'LOCKED' };
+    bossDoorState = function (sp) { if (bossDone(sp.boss)) return 'beaten'; if (sp.final && STORY.bossesBeaten.length < NEED) return 'locked'; return 'open'; };
+    const openMark = (c, t, sp) => { const y = -(sp.promptY + 52) + Math.sin(t * 3 + sp.x) * 4; c.beginPath(); c.ellipse(0, y, 13, 13, 0, 0, 7); c.fillStyle = '#d8412f'; c.fill(); c.lineWidth = 4; c.strokeStyle = '#2a1c18'; c.stroke(); c.fillStyle = '#f6ecd0'; c.fillRect(-2.2, y - 7, 4.4, 9); c.beginPath(); c.arc(0, y + 6, 2.4, 0, 7); c.fill(); };
+    const mark = (c, t, sp) => { const st = bossDoorState(sp);   // legacy doorMark :1846
+      if (st === 'beaten') { c.save(); c.translate(sp.flagX, 0); WCW.drawAsset(c, 'boss beaten flag', t, sp.fs); c.restore(); }
+      else if (st === 'locked') { c.save(); c.translate(0, sp.lockY); WCW.drawAsset(c, 'locked chains + padlock', t, sp.ls); c.restore(); }
+      else openMark(c, t, sp); };
+    const isl = OW_MAPS.island;
+    for (const sp of isl.spots) if (sp.id === 'vault') sp.boss = 'boss10';
+    for (const [id, boss, name] of [['light', 'boss8', 'Lighthouse'], ['obs', 'boss9', 'Observatory']]) {
+      const p = isl.props.find((q) => q.nm === name && !q.spot);
+      if (!p) continue;
+      const b = WCW.bbox(name), k = name === 'Lighthouse' || name === 'Observatory' ? 1.4 : 1;   // their layout scale (island.art.json)
+      const sp = { id, boss, name, final: false, x: p.x, y: p.y, promptY: name === 'Lighthouse' ? 140 : Math.min(260, Math.round(-b.t * k * 0.85)), flagX: Math.round((b.l + b.w) * k) + 22, fs: 1.1, ls: Math.max(0.6, b.w * k / 250), lockY: Math.round(b.t * k * 0.05), range: name === 'Lighthouse' ? 157 : 175 };
+      const draw = p.draw;
+      p.draw = (c, t) => { draw(c, t); mark(c, t, sp); };
+      Object.assign(p, { promptY: sp.promptY, range: sp.range, prompt: () => LABEL[bossDoorState(sp)], talk() {}, spot: sp });
+      isl.spots.push(sp);
+    }
+  }
+
   /* ---- levels: legacy's camera is pinned to the port's (pFrame eases its own, pDraw must use the port's) ---- */
   let camPin = null;
   { const c0 = { x: cam.x, y: cam.y };
