@@ -19155,6 +19155,31 @@ function hanatoDrawFloor(c,cx){GROVE_BG.drawGround(c,cx,ZM,PGY,hanatoDuskK(bossR
   const mgBody0 = bossBody, mgItems0 = bossItems;   // (legacy bossDraw = body + items; player 2 is drawn after it by the wrap above)
   const PH_ONLY = { boss8: 1, boss9: 1, boss10: 1 };   // the Magpie, the Stargazer, Bruce (D25): shapes only
   bossBody = function (c) { if (PH_ONLY[bossId]) { if (mgPh) drawPh(c, mgPh); return; } mgBody0(c); };
+  /* Speed: under these bosses' painted rooms legacy pDraw still paints its default boss sky: the flying whale (~110 paths) and
+     a row of hill images scaled down from a 3072 x 768 texture, all hidden by the room (~40% of a 2D frame on an iGPU).
+     Skipped while one of them is drawn. Not legacy code. */
+  let noHill = false;
+  const pDraw0 = pDraw;
+  pDraw = function (po) {
+    if (!bossRun || !PH_ONLY[bossId]) return pDraw0(po);
+    const w = pDrawWhale; pDrawWhale = function () {}; noHill = true;
+    try { return pDraw0(po); } finally { pDrawWhale = w; noHill = false; }
+  };
+  /* Speed: legacy draws its big backdrop images scaled (a 1600 x 900 arena to the full screen, the maps' ~3000 px sprites down)
+     with imageSmoothingQuality 'high' (bicubic): the costliest thing in most 2D frames on an iGPU (hub 44 fps, low quality 89).
+     Each image on legacy's screen canvas gets the cheapest quality that looks the same at its scale: 'low' (bilinear) when it is
+     drawn at 0.9x or bigger, 'medium' (mip-mapped) down to 0.5x, 'high' only below. Not legacy code. */
+  const drawImage0 = CanvasRenderingContext2D.prototype.drawImage;
+  pc.drawImage = function (s, ...a) {
+    if (noHill && s === hillTex) return;
+    if (this.imageSmoothingQuality === 'high') {
+      const m = this.getTransform(), k = Math.hypot(m.a, m.b);
+      const sc = a.length >= 8 ? (a[6] / a[2]) * k : a.length >= 4 ? (a[2] / (s.width || 1)) * k : k;
+      this.imageSmoothingQuality = sc >= 0.9 ? 'low' : sc >= 0.5 ? 'medium' : 'high';
+      try { return drawImage0.call(this, s, ...a); } finally { this.imageSmoothingQuality = 'high'; }
+    }
+    return drawImage0.call(this, s, ...a);
+  };
   bossItems = function (c) { if (!PH_ONLY[bossId]) mgItems0(c); };
   const ratDrawHandful0 = ratDrawHandful;
   ratDrawHandful = function (c, f) { ratDrawHandful0(c, f); if (rtPh && f.hp > 0) drawPh(c, rtPh); };
