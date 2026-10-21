@@ -21074,7 +21074,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       mkPh = s.id === 'boss4' ? s.ph : null;
       rtPh = s.id === 'boss1' ? s.ph : null;
       mgPh = PH_ONLY[s.id] ? s.ph : null;
-      if (PH_ONLY[s.id]) bossRun.items = [];   // her platforms scroll: they are in the shape list, not legacy's static items
+      if (PH_ONLY[s.id] || s.id === 'boss1') bossRun.items = [];   // boss1: the Rat has no platforms (Ruben 2026-10-20), legacy builds its own   // her platforms scroll: they are in the shape list, not legacy's static items
       if (s.id === 'boss1' && f.atk && f.atk.d) f.atk = { ...f.atk, name: 'rw_' + f.atk.name };   // D20: a reworked attack is not one of legacy's (its old drawing and Lights Out stay off)
       if (s.id === 'boss7') hanatoSync(f);
       if (!hold) bossLook(f, dt);
