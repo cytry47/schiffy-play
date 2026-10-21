@@ -2,36 +2,33 @@
   "id": "cammy",
   "kind": "boss",
   "model": "cammy.glb",
-  "source": "tools/art/cammy_new.py --form jester (Blender 5.2; the Cursed Jester P1-2 = the pack-built model of decision D21, baked by tools/art/cammy_jester_bake.mjs). The Phantom Monarch (transition B + P3) is its own file, characters/cammy_monarch (decision D22)",
+  "source": "tools/art/cammy_new.py --form jester (Blender 5.2; the Cursed Jester P1-2 = the ref-matched r2 model of decisions D61/D62, Skills/cammy-jester-3d copied to tools/art/cammy_jester3d, baked by tools/art/cammy_jester_bake.mjs; looks LEFT). The Phantom Monarch (transition B + P3) is its own file, characters/cammy_monarch (decision D22)",
   "scale": 1,
-  "yaw": 22,
+  "yaw": -22,
   "standOn": 0,
   "outline": {
     "width": 0.02,
     "color": "#0b0810",
     "widths": {
-      "fur": 0.05,
-      "j_glove": 0.05,
-      "j_bobble": 0.045,
-      "j_aura": 0.035,
-      "j_card": 0.03
+      "j_sclera": 0.0127,
+      "j_tongue": 0.0218,
+      "j_glove": 0.0508,
+      "j_chain": 0.0145,
+      "j_band": 0.0145,
+      "j_card": 0.0218,
+      "j_pom": 0.0363,
+      "fur": 0.0363
     }
   },
   "inked": [
-    "fur",
-    "glove",
-    "pom",
-    "card",
-    "chain",
-    "crown",
-    "watch",
-    "minion",
-    "flame",
-    "tongue",
-    "j_aura",
-    "j_bobble",
+    "j_sclera",
+    "j_tongue",
+    "j_glove",
+    "j_chain",
+    "j_band",
     "j_card",
-    "j_glove"
+    "j_pom",
+    "fur"
   ],
   "clips": {
     "idle": "idle",
