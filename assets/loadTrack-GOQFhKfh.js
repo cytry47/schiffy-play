@@ -1,0 +1,1 @@
+var e=0,t=()=>{e--};function n(n){return e++,n.then(t,t),n}var r=()=>e;export{n,r as t};
