@@ -2,18 +2,21 @@
   "id": "rat",
   "kind": "boss",
   "model": "rat.glb",
-  "source": "tools/art/rat.py (Blender 5.2, built from primitives; reference legacy bossDrawRat and docs/art/legacy_rat_*.png)",
+  "source": "tools/art/rat_new.py (Blender 5.2; the ref-matched r2 model of decision D65, Skills/giant-rat-3d copied to tools/art/rat3d, baked by tools/art/rat_bake.mjs; skeleton and clips of tools/art/rat.py, re-fitted). Faces LEFT: not mirrored in game. The old primitive Rat: tools/art/rat.py",
   "scale": 1,
-  "yaw": 30,
-  "standOn": 64,
-  "outline": { "width": 0.028, "color": "#14100a" },
-  "inked": ["fur", "eye"],
+  "yaw": -10,
+  "standOn": 51.2,
+  "outline": { "width": 0.022, "color": "#14100a", "widths": { "furhead": 0.022, "gungrip": 0.022, "muzzle": 0.022, "sclera": 0.0176, "gunwin": 0.0088, "teeth": 0.0088,
+    "apron": 0.022, "badge": 0.0176, "glove": 0.022, "heel": 0.0132, "nose": 0.0176, "gold": 0.0198, "tail": 0.022, "claw": 0.0088, "fur": 0.022, "arm": 0.022,
+    "hat": 0.022, "gun": 0.022, "tag": 0.022 } },
+  "inked": ["furhead", "gungrip", "muzzle", "sclera", "gunwin", "teeth", "apron", "badge", "glove", "heel", "nose", "gold", "tail", "claw", "fur", "arm", "hat", "gun", "tag"],
   "clips": { "idle": "idle", "roar": "roar", "collapse": "collapse", "dying": "dying" },
   "atk": {
     "cart": { "wind": 22 }, "tags": { "wind": 17 }, "coins": { "wind": 19 }, "shelves": { "wind": 8 },
     "swarm": { "wind": 22 }, "bouncers": { "wind": 38 }, "crates": { "wind": 19 }, "cheese": { "wind": 22 },
     "lights": { "wind": 36 }, "whip": { "wind": 14 }, "burrow": { "wind": 14 }
   },
-  "phases": { "2": { "fur": "#B9857A", "pupil": "#D8412F" }, "3": { "fur": "#B9857A", "pupil": "#D8412F" } },
+  "forms": { "nogun": { "hide": ["gun"] }, "notag": { "hide": ["tag"] } },
+  "phases": { "2": { "fur": "#59362a", "arm": "#59362a", "furhead": "#824e3c", "r0_pupil": "#D8412F" }, "3": { "fur": "#59362a", "arm": "#59362a", "furhead": "#824e3c", "r0_pupil": "#D8412F" } },
   "sockets": ["socket.head", "socket.chest", "socket.hand", "socket.mouth"]
 }
