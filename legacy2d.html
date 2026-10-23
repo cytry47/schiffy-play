@@ -22772,6 +22772,28 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     }
   }
 
+  /* ---- group C (Cuphead): the best grade of a beaten boss, a small badge on its door (the port's story.grades, set in ow()).
+     Drawn after the door's own mark, in the door prop's space, beside the CLEARED flag. Doors are wc props (never cached). ---- */
+  let owGrades = {};
+  {
+    const badge = (c, sp) => {
+      const g = owGrades[sp.boss];
+      if (!g || !bossDone(sp.boss)) return;
+      const x = (sp.flagX || 0) + 24, y = -42, r = 15;   // on the flag's pole, under the cloth (clear of props in front)
+      c.save(); c.lineJoin = 'round';
+      c.fillStyle = '#14100a'; c.beginPath(); c.arc(x, y + 3, r + 2, 0, 7); c.fill();   // the hard shadow
+      c.fillStyle = '#f6ecd0'; c.strokeStyle = '#14100a'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.stroke();
+      c.fillStyle = '#b3261e'; c.font = `700 ${g.grade.length > 1 ? 15 : 18}px Georgia`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(g.grade, x, y + 1); c.restore();
+    };
+    for (const k in OW_MAPS) for (const p of OW_MAPS[k].props || []) {
+      const sp = p.spot;
+      if (!sp || !sp.boss || p.l2dBadge) continue;
+      const draw = p.draw; p.l2dBadge = 1;
+      p.draw = function (c, t, q) { draw.call(this, c, t, q); badge(c, sp); };
+    }
+  }
+
   /* ---- levels: legacy's camera is pinned to the port's (pFrame eases its own, pDraw must use the port's) ---- */
   let camPin = null;
   { const c0 = { x: cam.x, y: cam.y };
@@ -23408,6 +23430,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       }
       foc = true;
       STORY.flags = clone(s.story.flags); STORY.bossesBeaten = s.story.beaten.slice(); STORY.clues = s.story.clues.slice();
+      owGrades = s.story.grades || {};   // group C: the door badges
       const d = s.dogs[0];
       ow.x = d.x; ow.y = d.y; ow.face = d.face; ow.view = d.view; ow.walkT = d.walkT; ow.moving = d.moving;
       ow.t = s.t; ow.cam.x = s.cam.x; ow.cam.y = s.cam.y; ow.msg = s.msg; ow.msgT = s.msgT; ow.fired = clone(s.fired);
