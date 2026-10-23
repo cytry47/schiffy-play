@@ -18542,7 +18542,7 @@ window.MONARCH_PARTS = {"jewels":[[-10.0,-447.0,8],[-44.0,-431.0,8],[27.5,-430.5
     if (oc.width !== w || oc.height !== h) { oc.width = w; oc.height = h; }
     og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-over'; og.clearRect(0, 0, w, h);
     og.setTransform(s, 0, 0, s, -BX0 * s, -BY0 * s); painter(og, P, t);
-    if (fl) { og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-atop'; og.fillStyle = '#fff'; og.fillRect(0, 0, w, h); og.globalCompositeOperation = 'source-over'; }
+    if (fl) { og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-over'; window.__flashFx && window.__flashFx.tint ? window.__flashFx.tint(og) : (og.globalCompositeOperation = 'source-atop', og.fillStyle = '#9AF4FF', og.fillRect(0, 0, w, h)); /* round 3: Cuphead's #9AF4FF multiply tint (flashFx.ts tintLayer) */ og.globalCompositeOperation = 'source-over'; }
     c.save(); c.globalAlpha *= al; c.imageSmoothingEnabled = true; c.drawImage(oc, BX0, BY0, BW, BH); c.restore();
   }
 
@@ -18753,7 +18753,7 @@ window.RAT_PARTS = {"whiskers":[[-146.0,-465.5,-133.1,-456.5],[-144.4,-455.5,-13
       c.save(); c.translate(D.hole[0], D.hole[1]); c.rotate(ang); c.beginPath(); c.ellipse(0, 0, D.hole[2], D.hole[3], 0, 0, 7);
       c.fillStyle = '#3d2410'; c.fill(); c.strokeStyle = INK; c.lineWidth = 2.4; c.stroke(); c.restore();
     }
-    if (q.flash) c.filter = 'brightness(1.9) saturate(0.15)';
+    if (q.flash) c.filter = 'brightness(1.9) saturate(0.15) sepia(1) hue-rotate(155deg) saturate(1.6)'; // round 3: whitened, then toward Cuphead's pale cyan #9AF4FF
     c.save();
     if (q.sink) {   // nothing of the Rat below the foot line: it goes down the hole
       const kk = Math.tan(ang); c.beginPath(); c.moveTo(-600, l0[1] + kk * (-600 - l0[0])); c.lineTo(600, l0[1] + kk * (600 - l0[0]));
@@ -18956,17 +18956,21 @@ window.RAT_RIG = {"pieces":{"tail":"M94.8 -374.38C97.47 -374.68 105.78 -374.56 1
     const { act, t, under } = actOf(f, T);
     shadow(c);
     stats.draws++; stats.last = under ? 'burrowed' : act; stats.seen[stats.last] = (stats.seen[stats.last] || 0) + 1;
-    const q = Object.assign(RatAnim.pose(act, t), { flash: fl, redEye: f.phase >= 2 });
+    // round 3 (REA, Cuphead): the ON frame multiply-tints the Rat (not his bar) by Cuphead's #9AF4FF (src/render/flashFx.ts
+    // paintFlash); rat.js's own CSS filter chain (q.flash) read darker and bluer, it is only the fallback without the helper
+    const FX = fl && window.__flashFx && window.__flashFx.paint ? window.__flashFx : null;
+    const q = Object.assign(RatAnim.pose(act, t), { flash: fl && !FX, redEye: f.phase >= 2 });
     if (f.gone || under) {   // only the bar is left: gone (coins fly off it, as legacy) or burrowed (D43)
       Rat.drawRig(c, 0, 0, S, Object.assign(RatAnim.pose('idle', 0), { only: BAR }));
       if (f.gone) coins(c, T);
       return;
     }
-    if (f.phase < 2) { Rat.drawRig(c, 0, 0, S, q); return; }
+    if (f.phase < 2 && !FX) { Rat.drawRig(c, 0, 0, S, q); return; }
     // the Den: the bar as it is, the Rat from his rimmed layer copy (rat.js cacheFor: built once per scale, so free per frame;
     // an off-screen pass with an outline halved the Den's fps on an iGPU)
     Rat.drawRig(c, 0, 0, S, Object.assign({}, q, { only: BAR }));
-    Rat.drawRig(c, 0, 0, S, Object.assign(q, { only: RAT, rim: RIM }));
+    const rq = Object.assign(q, f.phase < 2 ? { only: RAT } : { only: RAT, rim: RIM });
+    if (FX) FX.paint(c, (g) => Rat.drawRig(g, 0, 0, S, rq)); else Rat.drawRig(c, 0, 0, S, rq);
   }
 
   /* legacy bossBody's "gone" sparkle off the bar (08_bosses.js), on the new bar's top */
@@ -19112,24 +19116,25 @@ window.SG_RIG = {"pieces":{"staff":"M-203.2 -473.38C-199.91 -473.53 -187.47 -473
     idle: { dur: 1.6, loop: true, keys: [[0, {}], [0.8, { sy: 0.975, sx: 1.012, head: 0.035, sa: 0.04, ra: -0.06, hy: 2 }], [1.6, {}]] },
     // hurt: flinch back (the game flashes white itself; flash here is for the preview)
     hurt: { dur: 0.4, keys: [[0, {}], [0.06, { lean: 0.07, head: 0.12, sy: 1.05, sx: 0.96, sa: 0.15, ra: -0.2, flash: true }], [0.18, { lean: 0.05, head: 0.08, sa: 0.1, ra: -0.12 }], [0.4, {}]] },
-    // bull (one charge, 2.05 s: stop 0.6 wind-up, out 0.4 + hold 0.25 strike): raises the telescope, then points it at the player
-    bull: { dur: 2.05, loop: true, keys: [[0, {}], [0.45, P(UP, OPEN, { lean: 0.05, sy: 0.93, sx: 1.04, head: 0.06 })], [0.6, P(UP, OPEN, { lean: 0.05, sy: 0.93, sx: 1.04, head: 0.06 })],
-      [0.7, P(POINT, FLICK, { lean: -0.06, sy: 1.06, sx: 0.97, head: -0.04 })], [1.25, P(POINT, FLICK, { lean: -0.05 })], [1.6, {}], [2.05, {}]] },
-    // twins (tele 0.8, then the spokes turn 3.0 s): hand up to call them, then conducts them round with the telescope
-    twins: { dur: 3.8, keys: [[0, {}], [0.6, P(WAVE, UP, { sy: 0.95, head: 0.08 })], [0.8, P(WAVE, UP, { sy: 1.05, sx: 0.98, head: 0.05 })],
-      ...[1.3, 1.8, 2.3, 2.8, 3.3].map((t, i) => [t, P({ ra: i % 2 ? -0.2 : -0.5, sa: i % 2 ? 0.06 : 0.16, hy: i % 2 ? -4 : -12, head: i % 2 ? -0.02 : 0.05, sy: i % 2 ? 0.98 : 1.02 })]), [3.8, {}]] },
-    // archer (one shot, 2.3 s: tele 0.7 aim, 0.35 release): sights through the telescope, then a little recoil
-    archer: { dur: 2.3, loop: true, keys: [[0, {}], [0.5, P(SIGHT, { head: -0.05, lean: -0.03, sy: 0.96 })], [0.7, P(SIGHT, { head: -0.05, lean: -0.03, sy: 0.96 })],
-      [0.78, P(UP, { sa: 0.12, head: 0.08, lean: 0.06, sy: 1.04, ra: -0.15 })], [1.05, P({ sa: 0.08, head: 0.03 })], [1.6, {}], [2.3, {}]] },
-    // planets (one pair, 2.2 s: tele 0.5, throw 0.4): gathers with both hands up, then flings them forward
-    planets: { dur: 2.2, loop: true, keys: [[0, {}], [0.4, P(HIGH, WAVE, { sy: 0.92, sx: 1.05, lean: 0.05, head: 0.08 })], [0.5, P(HIGH, WAVE, { sy: 0.92, sx: 1.05, lean: 0.05, head: 0.08 })],
-      [0.62, P(POINT, FLICK, { sy: 1.07, sx: 0.96, lean: -0.07, head: -0.04 })], [0.9, P(POINT, FLICK, { lean: -0.05 })], [1.3, {}], [2.2, {}]] },
-    // cross (one volley, 1.5 s: follow 1.0 tracking, stop 0.5 wind-up; the release is the next volley's start)
-    cross: { dur: 1.5, loop: true, keys: [[0, P(POINT, { sy: 1.05, lean: -0.05 })], [0.25, P(SIGHT, {})], [0.6, P(SIGHT, { head: -0.03, dx: -3 })], [1.0, P(SIGHT, { dx: 2 })],
-      [1.4, P(UP, OPEN, { sy: 0.93, sx: 1.04, head: 0.05 })], [1.5, P(POINT, { sy: 1.05, lean: -0.05 })]] },
-    // comet (tele 0.6, then the swing): the telescope high over her head, then a big swing down at the player, holds as it flies
-    comet: { dur: 2.0, keys: [[0, {}], [0.45, P(HIGH, WAVE, { sy: 1.05, sx: 0.97, lean: 0.08, head: 0.1 })], [0.6, P(HIGH, WAVE, { sy: 1.06, lean: 0.09, head: 0.1 })],
-      [0.72, P({ sa: -0.32, hx: -8, hy: 4, ra: 0.2, sy: 0.92, sx: 1.05, lean: -0.08, head: -0.05 })], [1.2, P({ sa: -0.26, hx: -6, ra: 0.12, lean: -0.05 })], [2.0, {}]] },
+    // bull (one charge, 2.06 s: stop 0.8 wind-up, out 0.16 + hold 0.13 strike, back 0.17; Group D): raises the telescope, then points it at the player
+    bull: { dur: 2.06, loop: true, keys: [[0, {}], [0.65, P(UP, OPEN, { lean: 0.05, sy: 0.93, sx: 1.04, head: 0.06 })], [0.8, P(UP, OPEN, { lean: 0.05, sy: 0.93, sx: 1.04, head: 0.06 })],
+      [0.88, P(POINT, FLICK, { lean: -0.06, sy: 1.06, sx: 0.97, head: -0.04 })], [1.09, P(POINT, FLICK, { lean: -0.05 })], [1.26, {}], [2.06, {}]] },
+    // twins (tele 1.0, then the vortex turns 4.5 s spraying its spiral; Group D): hand up to call them, then conducts them round with the telescope
+    twins: { dur: 5.5, keys: [[0, {}], [0.8, P(WAVE, UP, { sy: 0.95, head: 0.08 })], [1.0, P(WAVE, UP, { sy: 1.05, sx: 0.98, head: 0.05 })],
+      ...[1.6, 2.3, 3.0, 3.7, 4.4, 5.1].map((t, i) => [t, P({ ra: i % 2 ? -0.2 : -0.5, sa: i % 2 ? 0.06 : 0.16, hy: i % 2 ? -4 : -12, head: i % 2 ? -0.02 : 0.05, sy: i % 2 ? 0.98 : 1.02 })]), [5.5, {}]] },
+    // archer (one shot, 3.75 s: tele 0.75 aim, gap 3.0; Group D): sights through the telescope, then a little recoil
+    archer: { dur: 3.75, loop: true, keys: [[0, {}], [0.55, P(SIGHT, { head: -0.05, lean: -0.03, sy: 0.96 })], [0.75, P(SIGHT, { head: -0.05, lean: -0.03, sy: 0.96 })],
+      [0.83, P(UP, { sa: 0.12, head: 0.08, lean: 0.06, sy: 1.04, ra: -0.15 })], [1.1, P({ sa: 0.08, head: 0.03 })], [1.65, {}], [3.75, {}]] },
+    // planets (one pair, 3.0 s: tele 0.5, throw 0.4, gap 3.0; Group D): gathers with both hands up, then flings them forward
+    planets: { dur: 3.0, loop: true, keys: [[0, {}], [0.4, P(HIGH, WAVE, { sy: 0.92, sx: 1.05, lean: 0.05, head: 0.08 })], [0.5, P(HIGH, WAVE, { sy: 0.92, sx: 1.05, lean: 0.05, head: 0.08 })],
+      [0.62, P(POINT, FLICK, { sy: 1.07, sx: 0.96, lean: -0.07, head: -0.04 })], [0.9, P(POINT, FLICK, { lean: -0.05 })], [1.3, {}], [3.0, {}]] },
+    // cross (one hop, 1.89 s: hop 321 at 294 = 1.09 s tracking, wait 0.8; Group D): she sights the hopping astrolabe along
+    cross: { dur: 1.892, loop: true, keys: [[0, P(SIGHT, {})], [0.35, P(SIGHT, { head: -0.03, dx: -3 })], [0.8, P(SIGHT, { dx: 2 })], [1.09, P(SIGHT, {})], [1.892, P(SIGHT, {})]] },
+    // crossFire (one volley, 0.75 s; the release on the volley = the cycle's start; the first volley 0.34 s after the last hop)
+    crossFire: { dur: 0.75, loop: true, keys: [[0, P(POINT, { sy: 1.05, lean: -0.05 })], [0.25, P(SIGHT, {})], [0.6, P(UP, OPEN, { sy: 0.93, sx: 1.04, head: 0.05 })], [0.75, P(POINT, { sy: 1.05, lean: -0.05 })]] },
+    // comet (tele 1.0 over the player, then the swing; one cycle per comet, 2 a use; Group D): the telescope high over her head, then a big swing down at the player
+    comet: { dur: 2.4, keys: [[0, {}], [0.8, P(HIGH, WAVE, { sy: 1.05, sx: 0.97, lean: 0.08, head: 0.1 })], [1.0, P(HIGH, WAVE, { sy: 1.06, lean: 0.09, head: 0.1 })],
+      [1.12, P({ sa: -0.32, hx: -8, hy: 4, ra: 0.2, sy: 0.92, sx: 1.05, lean: -0.08, head: -0.05 })], [1.6, P({ sa: -0.26, hx: -6, ra: 0.12, lean: -0.05 })], [2.4, {}]] },
     // roar = the phase change (trans 2.0 s; the game makes her untouchable): crouch, then both hands up, shaking with glee
     roar: { dur: 2.0, keys: [[0, {}], [0.3, P(UP, { sy: 0.9, sx: 1.06, head: 0.06 })], [0.5, P(HIGH, WAVE, { sy: 1.08, sx: 0.96, head: 0.14, lean: 0.06 })],
       ...shake([0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5], P(HIGH, WAVE, { sy: 1.08, sx: 0.96, head: 0.14, lean: 0.06 }), 3), [1.8, P(UP, { sy: 1.02 })], [2.0, {}]] },
@@ -19268,13 +19273,13 @@ window.MOON_RIG = {"pieces":{"body":"M-4.33 -283.25C0.5 -283.42 18.82 -283.63 23
     hurt: { dur: 0.4, keys: [[0, {}], [0.06, { dx: 10, rot: 0.03, fr: 0.12, jaw: 0.15, flash: true }], [0.2, { dx: 6, rot: 0.02, fr: 0.06, jaw: 0.08 }], [0.4, {}]] },
     // rise = the phase change into P3 (trans 2.0 s; the game fades it in): comes up from below, overshoots, settles grinning
     rise: { dur: 2.0, keys: [[0, { dy: 300, rot: 0.08 }], [1.2, { dy: -24, rot: -0.02, jaw: 0.2 }], [1.5, { dy: 8, rot: 0.01, jaw: 0.1 }], [1.75, { dy: -3 }], [2.0, {}]] },
-    // moonFace (one lunge, 3.9 s: tele 0.8 pull back, out 0.3, hold 0.7 snapping, back 0.5, gap 1.6)
-    moonFace: { dur: 3.9, loop: true, keys: [[0, {}], [0.6, P(BACK, { jaw: 0.12, rot: 0.015 })], [0.8, P(BACK, { jaw: 0.18, rot: 0.015 })],
-      [1.1, P(OUT, { fr: -0.06, jaw: 0.35, rot: -0.02 })], [1.3, P(OUT, { fr: -0.04, jaw: 0.02 })], [1.5, P(OUT, { fr: -0.06, jaw: 0.35 })], [1.7, P(OUT, { fr: -0.04, jaw: 0.02 })],
-      [1.8, P(OUT, { fr: -0.05, jaw: 0.1 })], [2.3, { fr: 0.03, jaw: 0.05, dx: 4 }], [2.6, {}], [3.9, {}]] },
-    // bombs (tele 0.5 red mouth, then 3 drops 2.5 s apart; each drop = the jaw gapes 0.4 s)
-    bombs: { dur: 6.1, keys: [[0, {}], [0.2, { red: 0.6, fr: 0.06, jaw: 0.08 }], [0.5, { red: 1, fr: 0.08, jaw: 0.1, dy: -6 }],
-      ...[0.5, 3.0, 5.5].flatMap(t => [[t + 0.12, { red: 1, jaw: 0.75, fr: -0.05, dy: 4 }], [t + 0.4, { red: 0.8, jaw: 0.12, fr: 0.02 }], [t + 1.2, { red: 0.5, jaw: 0.06, dy: -3 }]]), [6.1, {}]] },
+    // moonFace (one lunge, 3.64 s: tele 0.8 pull back, out 0.29, hold 0.7 snapping, back 0.25, gap 1.6; Group D)
+    moonFace: { dur: 3.64, loop: true, keys: [[0, {}], [0.6, P(BACK, { jaw: 0.12, rot: 0.015 })], [0.8, P(BACK, { jaw: 0.18, rot: 0.015 })],
+      [1.09, P(OUT, { fr: -0.06, jaw: 0.35, rot: -0.02 })], [1.29, P(OUT, { fr: -0.04, jaw: 0.02 })], [1.49, P(OUT, { fr: -0.06, jaw: 0.35 })], [1.69, P(OUT, { fr: -0.04, jaw: 0.02 })],
+      [1.79, P(OUT, { fr: -0.05, jaw: 0.1 })], [2.04, { fr: 0.03, jaw: 0.05, dx: 4 }], [2.3, {}], [3.64, {}]] },
+    // bombs (tele 0.5 red mouth, then 2 drops 3.0 s apart; each drop = the jaw gapes 0.4 s; Group D)
+    bombs: { dur: 5.0, keys: [[0, {}], [0.2, { red: 0.6, fr: 0.06, jaw: 0.08 }], [0.5, { red: 1, fr: 0.08, jaw: 0.1, dy: -6 }],
+      ...[0.5, 3.5].flatMap(t => [[t + 0.12, { red: 1, jaw: 0.75, fr: -0.05, dy: 4 }], [t + 0.4, { red: 0.8, jaw: 0.12, fr: 0.02 }], [t + 1.2, { red: 0.5, jaw: 0.06, dy: -3 }]]), [5.0, {}]] },
     // dying (2.0 s; the game sinks it 60 world units): shudders with the jaw wide, sags, sinks
     dying: { dur: 2.0, keys: [[0, {}], ...shake([0.08, 0.16, 0.24, 0.32, 0.4, 0.48, 0.56, 0.64], { jaw: 0.45, fr: 0.1, rot: 0.02, flash: false }, 6),
       [1.0, { jaw: 0.5, fr: 0.16, rot: 0.06, dy: 20 }], [2.0, { jaw: 0.55, fr: 0.2, rot: 0.1, dy: 56 }]] },
@@ -19311,18 +19316,22 @@ window.MOON_RIG = {"pieces":{"body":"M-4.33 -283.25C0.5 -283.42 18.82 -283.63 23
   const MOON_S = 300 / 282.2;    // the moon: the art's tall half-axis -> the game's r 300 (D44)
   const stats = { draws: 0, seen: {} };
 
+  /* round 3 (REA, Cuphead): the hit flash's ON frame multiply-tints the whole figure by Cuphead's #9AF4FF (src/render/
+     flashFx.ts paintFlash, window.__flashFx); the art's own whitening filter (sg.js / moon.js flashOf) read grey and is not used */
+  const lit = (c, on, fn) => (on && window.__flashFx && window.__flashFx.paint ? window.__flashFx.paint(c, fn) : fn(c));
+
   function draw(c, q) {
     const r = q.rig;
     stats.draws++; stats.seen[r.who + ':' + r.act] = (stats.seen[r.who + ':' + r.act] || 0) + 1;
     if (r.who === 'sg') {
-      const p = SgAnim.pose(r.act, r.t); p.flash = p.flash || r.fl;
-      Stargazer.drawRig(c, r.x, r.y, SG_S, p);
+      const p = SgAnim.pose(r.act, r.t); p.flash = false;   // the hit flash is the game's (r.fl), painted solid pale cyan below
+      lit(c, r.fl, (g) => Stargazer.drawRig(g, r.x, r.y, SG_S, p));
       return;
     }
     const p = MoonAnim.pose(r.act, r.t);
     if (r.act === 'moonFace') { p.fx = (r.fx || 0) / MOON_S; p.fy = (r.fy || 0) / MOON_S; }   // the sim's lunge, not the act's default
-    p.flash = p.flash || r.fl;
-    Moon.drawRig(c, r.x, r.y, MOON_S, p);
+    p.flash = false;
+    lit(c, r.fl, (g) => Moon.drawRig(g, r.x, r.y, MOON_S, p));
   }
 
   window.SgNew = { ok: true, draw, stats, SG_S, MOON_S };
@@ -20975,7 +20984,7 @@ window.MOKI_P1_RIG = {"arc":[[-114.0,-212.72],[-110.0,-211.74],[-106.0,-210.8],[
       MokiP1.drawRig(c, 0, 0, S1, q); c.restore();
       return;
     }
-    const q = MokiAnim.pose(d.act, d.t); q.onDark = 1;   // the junkyard at night: the P3 notes / aura in their dark-stage colours
+    const q = MokiAnim.pose(d.act, d.t); q.onDark = 1; q.flash = false;   // the hit flash is the game's (flashed above); the hurt act's own grey filter is only for the art preview   // the junkyard at night: the P3 notes / aura in their dark-stage colours
     Moki.drawRig(c, 0, -STAGE_H, S2, q);
   }
   /** The stage's drop offset (world units, + = down): during transition A it falls in with the deck (transIn's own drop). */
@@ -20985,7 +20994,7 @@ window.MOKI_P1_RIG = {"arc":[[-114.0,-212.72],[-110.0,-211.74],[-106.0,-210.8],[
     return t < 0 ? -2000 : (MokiAnim.pose('transIn', t).dy || 0) * S2;
   }
 
-  // the hit flash: the frame's sprite drawn once into a scratch canvas at the screen's scale, whitened (source-atop), blitted
+  // the hit flash: the frame's sprite drawn once into a scratch canvas at the screen's scale, multiply-tinted #9AF4FF (flashFx.ts tintLayer), blitted
   let fc = null;
   function flashed(c, box, fn) {
     const m = c.getTransform(), k = Math.hypot(m.a, m.b) || 1, [x0, y0, w, h] = box, W = Math.ceil(w * k), H = Math.ceil(h * k);
@@ -20994,7 +21003,7 @@ window.MOKI_P1_RIG = {"arc":[[-114.0,-212.72],[-110.0,-211.74],[-106.0,-210.8],[
     const g = fc.getContext('2d');
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
     fn(g);
-    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(255, 255, 255, 0.62)'; g.fillRect(0, 0, W, H);
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; window.__flashFx && window.__flashFx.tint ? window.__flashFx.tint(g) : (g.globalCompositeOperation = 'source-atop', g.fillStyle = '#9AF4FF', g.fillRect(0, 0, W, H)); /* round 3: Cuphead's #9AF4FF multiply tint (flashFx.ts tintLayer) */
     g.globalCompositeOperation = 'source-over';
     c.drawImage(fc, 0, 0, W, H, x0, y0, w, h);
   }
@@ -21314,11 +21323,14 @@ window.MG_RIG = {"pieces":{"head":"M-119.2 -228.38C-115.07 -228.53 -99.35 -228.6
   function draw(c, q) {
     const r = q.rig;
     stats.draws++; stats.seen[r.act] = (stats.seen[r.act] || 0) + 1;
-    const p = MgAnim.pose(r.act, r.t); p.flash = p.flash || r.fl; p.tilt = r.rot || 0;
+    const p = MgAnim.pose(r.act, r.t); p.flash = false; p.tilt = r.rot || 0;   // the hit flash is the game's (r.fl), painted below
     c.translate(r.x, r.y);
     if ((r.flip || 1) < 0) c.scale(-1, 1);
     c.rotate(r.rot || 0);
-    Magpie.drawRig(c, 0, 0, S, p);
+    // round 3 (REA, Cuphead): the ON frame multiply-tints her by Cuphead's #9AF4FF (src/render/flashFx.ts paintFlash);
+    // the art's own whitening filter (mg.js flashOf) read grey and is not used
+    if (r.fl && window.__flashFx && window.__flashFx.paint) window.__flashFx.paint(c, (g) => Magpie.drawRig(g, 0, 0, S, p));
+    else Magpie.drawRig(c, 0, 0, S, p);
   }
 
   window.MgNew = { ok: true, draw, stats, S };
@@ -22172,7 +22184,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     if (oc.width !== w || oc.height !== h) { oc.width = w; oc.height = h; }
     og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-over'; og.clearRect(0, 0, w, h);
     og.setTransform(s, 0, 0, s, -BX0 * s, -BY0 * s); og.__hx = c.__hx; paint(og, P, t);
-    og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-atop'; og.fillStyle = '#fff'; og.fillRect(0, 0, w, h); og.globalCompositeOperation = 'source-over';
+    og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-over'; window.__flashFx && window.__flashFx.tint ? window.__flashFx.tint(og) : (og.globalCompositeOperation = 'source-atop', og.fillStyle = '#9AF4FF', og.fillRect(0, 0, w, h)); /* round 3: Cuphead's #9AF4FF multiply tint (flashFx.ts tintLayer) */ og.globalCompositeOperation = 'source-over';
     c.save(); c.imageSmoothingEnabled = true; c.drawImage(oc, BX0, BY0, BW, BH); c.restore();
   }
 
@@ -22200,7 +22212,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
         if (oc.width !== w || oc.height !== h) { oc.width = w; oc.height = h; }
         og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-over'; og.clearRect(0, 0, w, h);
         og.setTransform(s, 0, 0, s, -BX0 * s, -BY0 * s); paint1(og);
-        og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-atop'; og.fillStyle = '#fff'; og.fillRect(0, 0, w, h); og.globalCompositeOperation = 'source-over';
+        og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-over'; window.__flashFx && window.__flashFx.tint ? window.__flashFx.tint(og) : (og.globalCompositeOperation = 'source-atop', og.fillStyle = '#9AF4FF', og.fillRect(0, 0, w, h)); /* round 3: Cuphead's #9AF4FF multiply tint (flashFx.ts tintLayer) */ og.globalCompositeOperation = 'source-over';
         c.save(); c.imageSmoothingEnabled = true; c.drawImage(oc, BX0, BY0, BW, BH); c.restore();
       }
     } finally { c.restore(); }
@@ -22458,7 +22470,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     if (bc.width !== w || bc.height !== h) { bc.width = w; bc.height = h; }
     bg.setTransform(1, 0, 0, 1, 0, 0); bg.globalCompositeOperation = 'source-over'; bg.clearRect(0, 0, w, h);
     bg.setTransform(q, 0, 0, q, -X0 * q, -Y0 * q); paintBald(bg, P, t, lw);
-    bg.setTransform(1, 0, 0, 1, 0, 0); bg.globalCompositeOperation = 'source-atop'; bg.fillStyle = 'rgba(255,255,255,0.62)'; bg.fillRect(0, 0, w, h); bg.globalCompositeOperation = 'source-over';
+    bg.setTransform(1, 0, 0, 1, 0, 0); bg.globalCompositeOperation = 'source-over'; window.__flashFx && window.__flashFx.tint ? window.__flashFx.tint(bg) : (bg.globalCompositeOperation = 'source-atop', bg.fillStyle = '#9AF4FF', bg.fillRect(0, 0, w, h)); /* round 3: Cuphead's #9AF4FF multiply tint (flashFx.ts tintLayer) */ bg.globalCompositeOperation = 'source-over';
     c.imageSmoothingEnabled = true; c.drawImage(bc, X0, Y0, W, H); c.restore();
   }
   /** Phase 2's head (in place of legacy's head sprite, inside legacy's htDrawHead): c at the head centre. */
@@ -22575,6 +22587,11 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     };
   }
   const clone = (v) => (v == null ? v : structuredClone(v));
+  /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
+     Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
+  const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
+  const pPose0 = pPose;
+  pPose = function () { const b = pPose0(); if (typeof P.blinkA === 'number') b.alpha = P.blinkA; return b; };
   const sgn = (v) => (v < 0 ? -1 : v > 0 ? 1 : 0);
   let bossId = null;
 
@@ -22675,7 +22692,19 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
   let stReal = null;
   const ghost0 = pDrawGhost;
-  pDrawGhost = function (c) { if (stReal == null) return ghost0(c); const k = P.st; P.st = stReal; ghost0(c); P.st = k; };
+  /* the co-op ghost floats on at the sim's speed (Cuphead, ghostPos): legacy draws it at P.h + 60 + its own rise (capped at
+     280), so P.h is shifted for the draw to put it at the sim's height P.ghH (set by legacyView.ts) */
+  const ghRise = (t) => Math.min(280, t * 70 + t * t * 50);
+  /* legacy fades its ghost out over 2.2-3.4 s (kept when playing alone), but the co-op ghost is still on screen (and parryable) after that (1st death: it
+     leaves the top at ~4.06 s): past 2.2 s the co-op ghost is drawn with its clock stepped back whole sway periods (2 pi / 5; the
+     tail's wave is twice as fast), so legacy draws the same sway and tail at full alpha. Its height is the sim's either way. */
+  const GH_SWAY = 2 * Math.PI / 5;
+  pDrawGhost = function (c) {
+    const k = P.st, h = P.h, t0 = stReal == null ? k : stReal;
+    const t = p2 && P.ghH != null && t0 > 2.2 ? t0 - Math.ceil((t0 - 2.2) / GH_SWAY) * GH_SWAY : t0;
+    P.st = t; if (P.ghH != null) P.h = P.ghH - 60 - ghRise(t);
+    ghost0(c); P.st = k; P.h = h;
+  };
   const bossDraw0 = bossDraw;
   let zonesOv = null;   // the B-key overlay (D24, the port's bossZones): hit shape yellow, body-contact zones red, a bite cut out of one green (D41)
   function drawZones(c, z) {
@@ -23032,7 +23061,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   /* D24: like the 3D view (src/render/cammyView.ts ART_DX), the wide new art stands back (further right) over his new hit box and
      contact circles (data CM.hb / cb, hbP3 / cbP3); part of it may leave the screen */
   const CAM_DX = { jester: 80, monarch: -70 };   // the 2D art sits differently from the 3D models, so its own numbers (B overlay; D40: monarch -40 -> -70 for the ref-matched art, measured: body vs hit circles as before)
-  bossDrawCammy = function (c, f, fl) { const up = f.atk && f.atk.name === 'drop' && f.cy > 0, nw = !!(window.CammyNew && CammyNew.ok);
+  bossDrawCammy = function (c, f, fl) { fl = flOf(f, fl); const up = f.atk && f.atk.name === 'drop' && f.cy > 0, nw = !!(window.CammyNew && CammyNew.ok);
     const dx = nw ? (camJester(f) ? CAM_DX.jester : CammyNew.drawMonarch ? CAM_DX.monarch : 0) * cammySz(f) : 0;
     c.save(); c.translate(dx, up ? -f.cy : 0);
     try { if (camJester(f)) { try { cammySprStart(); cammySprWant(3); } catch (x) { /* no worker */ } CammyNew.drawFight(c, f, fl, T); }
@@ -23045,6 +23074,13 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     f.atk = { name: 'kiss', t: a.t, exit: a.exit, nw: 0, tm0: 0, waves: a.kt.map((t) => ({ tm: t - CM.k2Wind, ts: [t] })) };
     try { cammyDrawGirl0(c, f); } finally { f.atk = a; }
   };
+  /* Round 3 (REA, Cuphead): Bruce's hit flash in 2D. The shapes (src/render/bruceShapes.ts, shared with 3D) carry it as a copy of
+     his painting in a cyan-washed palette at alpha .62 and a white heart ('bcheart' v[0] 1); the 2D view paints the normal painting / heart
+     with the #9AF4FF multiply tint instead, like Cammy's ON frame (src/render/flashFx.ts paintFlash). */
+  const bcFlash = (q) => !!(window.__flashFx && window.__flashFx.paint && window.__propArt) &&
+    ((q.art === 'bruce' && q.v && q.v[q.v.length - 1] === 1) || (q.art === 'bcheart' && q.v && q.v[0] > 0));
+  // the multiply tint goes over his NORMAL painting / heart (the 3D copy's cyan-washed palette would wash out twice)
+  const bcPlain = (q) => Object.assign({}, q, { v: q.art === 'bruce' ? [...q.v.slice(0, -1), 0] : [0, ...q.v.slice(1)] });
   function drawPh(c, list) {   // also Hanato's rework placeholders (D10)
     for (const q of list) {
       c.save(); c.globalAlpha = q.a == null ? 1 : q.a; c.fillStyle = q.col; c.strokeStyle = q.col;
@@ -23054,6 +23090,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       else if (q.k === 'art') {
         const rp = q.rig && (q.rig.who === 'mg' ? window.MgNew : window.SgNew);
         if (rp) rp.draw(c, q);   // a ref-matched 2D rig: the Stargazer (src/render2d/sgNew.js), the Magpie (mgNew.js)
+        else if (bcFlash(q)) { if (q.a == null || q.a > 0) { c.globalAlpha = 1; c.translate(q.x, q.y); window.__flashFx.paint(c, (g) => window.__propArt(g, bcPlain(q))); } }   // round 3: Cuphead's multiply tint
         else if (!(q.no2d && window.SgNew)) { c.translate(q.x, q.y); if (window.__propArt) window.__propArt(c, q); }   // themed props (src/render/propArt.ts, handed in by legacyView); no2d: a piece the rig replaces
       }
       else { c.lineWidth = q.lw || 3; c.beginPath(); c.moveTo(q.x, q.y); c.lineTo(q.x2, q.y2); c.stroke(); }
@@ -23139,7 +23176,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   bossBody = function (c) {
     const f = bossRun && bossRun.fight;
     if (bossId !== 'boss1' || !f || !(window.RatNew && RatNew.ok)) return rtBody0(c);
-    const dead = f.hp <= 0, fl = dead ? Math.floor(f.dieT * 14) % 2 === 0 && !f.gone : f.hit > .07,
+    const dead = f.hp <= 0, fl = dead ? Math.floor(f.dieT * 14) % 2 === 0 && !f.gone : flOf(f, f.hit > .07),
       sh = dead ? Math.sin(T * 70) * 9 * Math.max(0, 1 - f.dieT / BR.dieBurst) : f.state === 'roar' || f.state === 'collapse' ? Math.sin(T * 60) * 5 : 0;
     c.save(); c.translate((f.hx || f.x) + sh * (f.gone ? 0 : 1), PGY - (f.hy || 0));
     try { RatNew.draw(c, f, fl, T); } finally { c.restore(); }
@@ -23178,7 +23215,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   bossBody = function (c) {
     const f = bossRun && bossRun.fight;
     if (bossId !== 'boss4' || !f || !(window.DjMokiNew && DjMokiNew.ok)) return mkBody0(c);
-    const dead = f.hp <= 0, fl = dead ? Math.floor(f.dieT * 14) % 2 === 0 && !f.gone : f.hit > .07,
+    const dead = f.hp <= 0, fl = dead ? Math.floor(f.dieT * 14) % 2 === 0 && !f.gone : flOf(f, f.hit > .07),
       sh = dead ? Math.sin(T * 70) * 9 * Math.max(0, 1 - f.dieT / BR.dieBurst) : 0;
     const stg = mkPh && window.__propArt ? mkPh.find(mkStage) : null;
     if (stg) { c.save(); c.translate(stg.x, stg.y + DjMokiNew.stageDy(f)); window.__propArt(c, stg); c.restore(); }
@@ -23200,6 +23237,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const bossDrawHanato0 = bossDrawHanato;
   let htHeadF = null;   // the fight whose head legacy's htDrawHead is drawing (its sprite call has no f)
   bossDrawHanato = function (c, f, fl, p2) {
+    fl = flOf(f, fl);
     const N = window.HanatoNew && HanatoNew.ok ? HanatoNew : null;
     if (N && f.phase < 2 && !f.xform) return N.drawFight(c, f, fl, T);
     htHeadF = f;
@@ -23207,7 +23245,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     if (N && f.xform && f.phase < 2) N.drawBurst(c, f, T);
   };
   const htDrawHeadSprite0 = htDrawHeadSprite;
-  htDrawHeadSprite = function (c, fl) { const N = window.HanatoNew && HanatoNew.ok && HanatoNew.drawHead ? HanatoNew : null; if (N && htHeadF) return N.drawHead(c, htHeadF, fl, T); htDrawHeadSprite0(c, fl); };
+  htDrawHeadSprite = function (c, fl) { fl = flOf(htHeadF, fl); const N = window.HanatoNew && HanatoNew.ok && HanatoNew.drawHead ? HanatoNew : null; if (N && htHeadF) return N.drawHead(c, htHeadF, fl, T); htDrawHeadSprite0(c, fl); };
   const htDraw0 = htDraw;
   // the Banana Brute draws the glove punch himself (hanatoNew.js, on the same hazard): the placeholder arm / glove boxes are left out
   const htGlovePh = (q) => (q.k === 'line' && q.col === '#d9b23a') || (q.k === 'box' && (q.col === '#d8412f' || q.col === '#ffffff'));
