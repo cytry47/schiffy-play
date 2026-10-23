@@ -21633,6 +21633,11 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const PI = Math.PI, K = 409 / 350;
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v), sm = (u) => { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }, lerp = (a, b, k) => a + (b - a) * k;
   const MET = { tele: 0.6, n: 3, gap: 2.3 }, SEED = { tele: 0.7, n: 5, gap: 0.9 }, GLV = { tele: 0.9, outT: 0.1, hold: 0.35, inT: 0.21 }, XF = { burst: 0.9, swell: 0.12 };
+  // group E: follow the port's live HT (window.__portHT: the fight's Simple / Expert numbers), as hanatoNew.js does; the meteor's
+  // count and gap are per use (d.n / d.g). Without it (the sandbox) the Regular copies stay.
+  const BNC = { squash: 0.3 };
+  const cp = (o, s, ks) => { if (s) for (const k of ks) if (typeof s[k] === 'number') o[k] = s[k]; };
+  const liveSync = () => { const L = window.__portHT; if (!L || !L.p1) return; cp(MET, L.p1.meteor, ['tele', 'gap']); cp(BNC, L.p1.bounce, ['squash']); cp(SEED, L.p1.seeds, ['tele', 'n', 'gap']); cp(GLV, L.p1.glove, ['tele', 'outT', 'hold', 'inT']); };
   const REST = { L: [-148.17, -147.59], R: [128.66, -179.58] };      // = arm_fit.js wrists (B) in the origin frame
   const G1 = [116, -190, -0.35], G2 = [-104, -182, PI + 0.35];       // the game's rest fists (design frame)
   const FL = 0.75;   // our flaps are longer than the game's: a bit less swing
@@ -21640,6 +21645,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
 
   /* the game's pose (design frame) */
   function gamePose(f, T) {
+    liveSync();
     const t = T, hop = (t * 2.3) % 1, s = Math.sin(PI * hop);
     const c2 = (t * 1.15) % 2, jf = c2 > 0.2 && c2 < 0.5 ? Math.sin(PI * (c2 - 0.2) / 0.3) : 0, jb = c2 > 1.2 && c2 < 1.5 ? Math.sin(PI * (c2 - 1.2) / 0.3) : 0;
     const P = {
@@ -21664,12 +21670,12 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     const at = a.t, n = a.name, d = a.d || {};
     P.name = n;
     if (n === 'meteor') {
-      const tl = MET.tele, last = tl + (MET.n - 1) * MET.gap;
+      const tl = MET.tele, mn = d.n || MET.n, mg = d.g || MET.gap, last = tl + (mn - 1) * mg;
       P.lift = 0; P.sy = 1; P.sx = 1; P.mouth = 'maw';
       P.g1x = 92; P.g1y = -112; P.g1r = 1.2; P.g2x = -92; P.g2y = -112; P.g2r = PI - 1.2;
       if (at < tl) { const k = sm(at / tl); P.name = 'meteor:tele'; P.lean = -0.16 * k; P.bx = -8 * k; P.sy = 1 + 0.06 * k; P.sx = 1 - 0.04 * k; P.glow = k; P.shake = 1.5 * k; P.fl0 = -0.25 * k; P.fl1 = -0.25 * k; P.sn = -0.4 * k; }
       else {
-        let u = 9; for (let i = 0; i < MET.n; i++) { const ts = tl + i * MET.gap; if (at >= ts) u = at - ts; }
+        let u = 9; for (let i = 0; i < mn; i++) { const ts = tl + i * mg; if (at >= ts) u = at - ts; }
         const sp = u < 0.35 ? 1 - u / 0.35 : 0;
         P.name = sp > 0 ? 'meteor:spit' : 'meteor:hold'; P.glow = 1; P.spit = u < 0.4 ? 1 - u / 0.4 : 0;
         P.lean = 0.22 * sp - 0.08 * (1 - sp); P.bx = 14 * sp; P.sx = 1 + 0.08 * sp; P.sy = 1 - 0.07 * sp; P.fl0 = 0.35 * sp; P.fl1 = 0.35 * sp; P.sn = 0.9 * sp;
@@ -21685,7 +21691,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
         P.g1x = 92; P.g1y = -300 - 10 * st; P.g1r = -1.2; P.g2x = -92; P.g2y = -300 - 10 * st; P.g2r = PI + 1.2;
         P.wing = 1; P.sn = u < 0.5 ? 1.1 : -1.1; P.eye = 'wide'; P.mouth = 'grit';
       } else {
-        const tn = (d.next || 0) - at, land = 0.3 - tn, k = tn > 0 && tn <= 0.3 ? 1 : 0;
+        const tn = (d.next || 0) - at, land = BNC.squash - tn, k = tn > 0 && tn <= BNC.squash ? 1 : 0;
         P.name = 'bounce:squash'; P.lift = 0; P.sy = 0.8; P.sx = 1.18; P.fl0 = -0.45; P.fl1 = -0.45; P.fl2 = -0.2; P.mouth = 'grit'; P.eye = 'squint';
         P.g1x = 70; P.g1y = -96; P.g1r = 0.9; P.g2x = -70; P.g2y = -96; P.g2r = PI - 0.9; P.sn = -0.5;
         if (k && land >= 0 && land < 0.18 && (d.k || 0) > 0) { P.name = 'bounce:land'; P.sy = 0.7; P.sx = 1.26; P.puff = land / 0.25; }
@@ -21819,9 +21825,21 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const SEED = { tele: 0.7, n: 5, gap: 0.9 };
   const GLV = { tele: 0.9, outT: 0.1, hold: 0.35, inT: 0.21, y0: 100, y1: 46 };
   const XF = { burst: 0.9, swell: 0.12 };
+  const BNC = { squash: 0.3 };
+  /* group E: the port hands its live HT (window.__portHT, src/render2d/legacyView.ts: the fight's Simple / Expert numbers are
+     merged into it in place), so the timing copies follow the mode; a page without it (a sandbox) keeps the Regular copies.
+     The meteor's count and gap are per use (the attack's d.n / d.g: the pattern's length, Expert's second list). */
+  const cp = (o, s, ks) => { if (s) for (const k of ks) if (typeof s[k] === 'number') o[k] = s[k]; };
+  function liveSync() {
+    const L = window.__portHT; if (!L || !L.p1 || !L.p2) return;
+    cp(MET, L.p1.meteor, ['tele', 'gap']); cp(BNC, L.p1.bounce, ['squash']); cp(SEED, L.p1.seeds, ['tele', 'n', 'gap']); cp(GLV, L.p1.glove, ['tele', 'outT', 'hold', 'inT', 'y0', 'y1']);
+    cp(P2D.dive, L.p2.dive, ['tele', 'diveT', 'stay']); cp(P2D.beam, L.p2.beam, ['moveT', 'charge', 'beamT']); cp(P2D.ha, L.p2.ha, ['tele', 'gap']);
+    cp(P2D.ufo, L.p2.ufo, ['tele']); cp(P2D.pyr, L.p2.pyr, ['tele', 'every', 'eyeT', 'n', 'beamT']);
+  }
 
   /* ---------------- the pose: spring targets + instant looks (design frame: forward = +x, feet at 0, up = -y) ---------------- */
   function poseOf(f, T) {
+    liveSync();
     const t = T, hop = (t * 2.3) % 1, s = Math.sin(Math.PI * hop);
     const c2 = (t * 1.15) % 2, jf = c2 > 0.2 && c2 < 0.5 ? Math.sin(Math.PI * (c2 - 0.2) / 0.3) : 0, jb = c2 > 1.2 && c2 < 1.5 ? Math.sin(Math.PI * (c2 - 1.2) / 0.3) : 0;
     const P = {
@@ -21847,12 +21865,12 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     const at = a.t, n = a.name, d = a.d || {};
     P.name = n;
     if (n === 'meteor') {   // leans back, opens a fanged glowing maw, fists clenched at his sides; snaps forward and spits on every shot
-      const tl = MET.tele, last = tl + (MET.n - 1) * MET.gap;
+      const tl = MET.tele, mn = d.n || MET.n, mg = d.g || MET.gap, last = tl + (mn - 1) * mg;
       P.lift = 0; P.sy = 1; P.sx = 1; P.mouth = 'maw';
       P.g1x = 92; P.g1y = -112; P.g1r = 1.2; P.g2x = -92; P.g2y = -112; P.g2r = Math.PI - 1.2;
       if (at < tl) { const k = sm(at / tl); P.name = 'meteor:tele'; P.lean = -0.16 * k; P.bx = -8 * k; P.sy = 1 + 0.06 * k; P.sx = 1 - 0.04 * k; P.glow = k; P.shake = 1.5 * k; P.fl0 = -0.25 * k; P.fl1 = -0.25 * k; P.sn = -0.4 * k; }
       else {
-        let u = 9; for (let i = 0; i < MET.n; i++) { const ts = tl + i * MET.gap; if (at >= ts) u = at - ts; }
+        let u = 9; for (let i = 0; i < mn; i++) { const ts = tl + i * mg; if (at >= ts) u = at - ts; }
         const sp = u < 0.35 ? 1 - u / 0.35 : 0;
         P.name = sp > 0 ? 'meteor:spit' : 'meteor:hold'; P.glow = 1; P.spit = u < 0.25 ? 1 - u / 0.25 : 0;
         P.lean = 0.22 * sp - 0.08 * (1 - sp); P.bx = 14 * sp; P.sx = 1 + 0.08 * sp; P.sy = 1 - 0.07 * sp; P.fl0 = 0.35 * sp; P.fl1 = 0.35 * sp; P.sn = 0.9 * sp;
@@ -21868,8 +21886,8 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
         P.g1x = 92; P.g1y = -300 - 10 * st; P.g1r = -1.2; P.g2x = -92; P.g2y = -300 - 10 * st; P.g2r = Math.PI + 1.2;
         P.wing = 1; P.sn = u < 0.5 ? 1.1 : -1.1; P.eye = 'wide'; P.mouth = 'grit';
       } else {
-        const tn = (d.next || 0) - at, land = 0.3 - tn;   // d.next = landing (or the start) + the squash
-        const k = tn > 0 && tn <= 0.3 ? 1 : 0;
+        const tn = (d.next || 0) - at, land = BNC.squash - tn;   // d.next = landing (or the start) + the squash
+        const k = tn > 0 && tn <= BNC.squash ? 1 : 0;
         P.name = 'bounce:squash'; P.lift = 0; P.sy = 0.8; P.sx = 1.18; P.fl0 = -0.45; P.fl1 = -0.45; P.fl2 = -0.2; P.mouth = 'grit'; P.eye = 'squint';
         P.g1x = 70; P.g1y = -96; P.g1r = 0.9; P.g2x = -70; P.g2y = -96; P.g2r = Math.PI - 0.9; P.sn = -0.5;
         if (k && land >= 0 && land < 0.18 && (d.k || 0) > 0) { P.name = 'bounce:land'; P.sy = 0.7; P.sx = 1.26; P.puff = land / 0.25; }
@@ -22311,6 +22329,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
 
   /** The pose / face for this frame (draw only, from the port's attack clock). */
   function baldPose(f, T) {
+    liveSync();
     const P = { name: 'idle', eye: 'norm', mouth: 'calm', rot: 0.035 * Math.sin(T * 1.6), dx: 0, sx: 1, sy: 1, lookX: -5, lookY: 0, brow: 0, glint: 0, glow: 0, puff: 0 };
     if ((T * 0.31) % 1 < 0.04) P.eye = 'shut';   // a slow blink
     const a = f.state === 'atk' ? f.atk : null, at = a ? a.t : 0, n = a ? a.name : '';
