@@ -22752,7 +22752,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
      its island closure (07_eggu_island.js :1823-1859), so the doors are added here: the same mark / prompt as legacy's own. ---- */
   {
     const NEED = 6, LABEL = { open: 'FIGHT', beaten: 'CLEARED', locked: 'LOCKED' };
-    bossDoorState = function (sp) { if (bossDone(sp.boss)) return 'beaten'; if (sp.final && STORY.bossesBeaten.length < NEED) return 'locked'; return 'open'; };
+    bossDoorState = function (sp) { if (bossDone(sp.boss)) return 'beaten'; if (sp.final && (owFinal == null ? STORY.bossesBeaten.length < NEED : !owFinal)) return 'locked'; return 'open'; };   // group E: the port's final-door rule (6 on Regular+)
     const openMark = (c, t, sp) => { const y = -(sp.promptY + 52) + Math.sin(t * 3 + sp.x) * 4; c.beginPath(); c.ellipse(0, y, 13, 13, 0, 0, 7); c.fillStyle = '#d8412f'; c.fill(); c.lineWidth = 4; c.strokeStyle = '#2a1c18'; c.stroke(); c.fillStyle = '#f6ecd0'; c.fillRect(-2.2, y - 7, 4.4, 9); c.beginPath(); c.arc(0, y + 6, 2.4, 0, 7); c.fill(); };
     const mark = (c, t, sp) => { const st = bossDoorState(sp);   // legacy doorMark :1846
       if (st === 'beaten') { c.save(); c.translate(sp.flagX, 0); WCW.drawAsset(c, 'boss beaten flag', t, sp.fs); c.restore(); }
@@ -22774,17 +22774,36 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
 
   /* ---- group C (Cuphead): the best grade of a beaten boss, a small badge on its door (the port's story.grades, set in ow()).
      Drawn after the door's own mark, in the door prop's space, beside the CLEARED flag. Doors are wc props (never cached). ---- */
-  let owGrades = {};
+  /* group E (Cuphead's 5 flag looks, from the port's doorLook): 1 Simple = pale grey badge + SIMPLE tag; 2 Regular below A- =
+     the group C badge; 3 Regular A- or better = gold ring; 4 Expert below S = dark red badge + EXPERT tag; 5 Expert with S =
+     dark red, gold ring, gold letter and a star. 0 = not beaten (no badge). */
+  let owGrades = {}, owLooks = {}, owFinal = null;
   {
+    const LOOK = [null,
+      { bg: '#cfd6dc', ink: '#3b4650', ring: '#14100a', tag: 'SIMPLE' },
+      { bg: '#f6ecd0', ink: '#b3261e', ring: '#14100a' },
+      { bg: '#f6ecd0', ink: '#b3261e', ring: '#f6c84c', gold: 1 },
+      { bg: '#7a1712', ink: '#f6ecd0', ring: '#14100a', tag: 'EXPERT' },
+      { bg: '#7a1712', ink: '#f6c84c', ring: '#f6c84c', gold: 1, tag: 'EXPERT', star: 1 }];
+    const star = (c, x, y, r) => { c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * 0.45 : r; c.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } c.closePath(); c.fill(); c.stroke(); };
     const badge = (c, sp) => {
       const g = owGrades[sp.boss];
       if (!g || !bossDone(sp.boss)) return;
+      const L = LOOK[owLooks[sp.boss]] || LOOK[2];
       const x = (sp.flagX || 0) + 24, y = -42, r = 15;   // on the flag's pole, under the cloth (clear of props in front)
       c.save(); c.lineJoin = 'round';
       c.fillStyle = '#14100a'; c.beginPath(); c.arc(x, y + 3, r + 2, 0, 7); c.fill();   // the hard shadow
-      c.fillStyle = '#f6ecd0'; c.strokeStyle = '#14100a'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.stroke();
-      c.fillStyle = '#b3261e'; c.font = `700 ${g.grade.length > 1 ? 15 : 18}px Georgia`; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(g.grade, x, y + 1); c.restore();
+      c.fillStyle = L.bg; c.strokeStyle = L.ring; c.lineWidth = L.gold ? 4 : 3; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.stroke();
+      if (L.gold) { c.strokeStyle = '#14100a'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, r + 2.5, 0, 7); c.stroke(); }
+      c.fillStyle = L.ink; c.font = `700 ${g.grade.length > 1 ? 15 : 18}px Georgia`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(g.grade, x, y + 1);
+      if (L.tag) {   // the mode tag under the badge
+        c.font = '700 9px Georgia'; const tw = c.measureText(L.tag).width + 8;
+        c.fillStyle = '#14100a'; c.fillRect(x - tw / 2, y + r + 1, tw, 12);
+        c.fillStyle = L.tag === 'SIMPLE' ? '#cfd6dc' : '#f6c84c'; c.fillText(L.tag, x, y + r + 7.5);
+      }
+      if (L.star) { c.fillStyle = '#f6c84c'; c.strokeStyle = '#14100a'; c.lineWidth = 1.5; star(c, x + r - 1, y - r + 1, 7); }
+      c.restore();
     };
     for (const k in OW_MAPS) for (const p of OW_MAPS[k].props || []) {
       const sp = p.spot;
@@ -23431,6 +23450,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       foc = true;
       STORY.flags = clone(s.story.flags); STORY.bossesBeaten = s.story.beaten.slice(); STORY.clues = s.story.clues.slice();
       owGrades = s.story.grades || {};   // group C: the door badges
+      owLooks = s.looks || {}; owFinal = typeof s.finalOpen === 'boolean' ? s.finalOpen : null;   // group E: badge looks, final-door rule
       const d = s.dogs[0];
       ow.x = d.x; ow.y = d.y; ow.face = d.face; ow.view = d.view; ow.walkT = d.walkT; ow.moving = d.moving;
       ow.t = s.t; ow.cam.x = s.cam.x; ow.cam.y = s.cam.y; ow.msg = s.msg; ow.msgT = s.msgT; ow.fired = clone(s.fired);
