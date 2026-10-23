@@ -18823,6 +18823,11 @@ window.RAT_RIG = {"pieces":{"tail":"M94.8 -374.38C97.47 -374.68 105.78 -374.56 1
     LOW = { hx: 20, hy: 40, ha: -0.6 }, DIVE = { hx: 40, hy: 0, ha: -0.2 }, KICK = { hx: 20, hy: 18, ha: 0.35 };
   const P = (...o) => Object.assign({}, ...o);
   const shake = (ts, base, amp) => ts.map((t, i) => [t, P(base, { dx: i % 2 ? amp : -amp })]);
+  // look-only copies of the port's rework beats (src/data/bosses.json RR.rw, group D 2026-10-22), so each strike lands on
+  // the game's beat: cart charge = fall + gap, tags wind/gap, coins wind, swarm warn, whip go, lights surface
+  const RWT = { cart: 0.7 + 1.76, tags: { wind: 1.2, gap: 0.65, n: 5 }, coins: 1.6, swarm: 2.0, whip: 3.0, lights: 1.5 };
+  const from = (t0, t1, dt) => { const o = []; for (let t = t0; t <= t1 + 1e-6; t += dt) o.push(+t.toFixed(3)); return o; };
+  const TG = RWT.tags, TS = [...Array(TG.n)].map((_, i) => TG.wind + i * TG.gap), TL = TS[TS.length - 1];
   const A = {
     rest: { dur: 1, loop: true, keys: [[0, {}]] },
     idle: { dur: 1.2, loop: true, keys: [[0, {}], [0.6, { sy: 0.97, sx: 1.02, tail: 0.07, head: 0.04, ha: 0.06, hy: 2 }], [1.2, {}]] },
@@ -18830,19 +18835,19 @@ window.RAT_RIG = {"pieces":{"tail":"M94.8 -374.38C97.47 -374.68 105.78 -374.56 1
     hurt: { dur: 0.4, keys: [[0, {}], [0.06, { lean: 0.2, head: 0.2, jaw: -0.32, uy: -6, sx: 0.95, sy: 1.06, hx: 8, hy: 8, ha: -0.35, flash: true }],
                              [0.18, { lean: 0.14, head: 0.14, jaw: -0.24, uy: -3, hx: 6, hy: 6, ha: -0.2 }], [0.4, {}]] },
     // P1 cart: winds back, then shouts and thrusts the gun forward as the cart charges
-    cart: { dur: 1.2, keys: [[0, {}], [0.4, P(TUCK, { lean: 0.12, head: 0.08, sy: 0.92, sx: 1.05 })],
-                             [0.55, P(FLING, { lean: -0.18, head: 0.06, jaw: -0.42, sy: 1.08, sx: 0.95 })], [0.95, P(AIM, { lean: -0.12, jaw: -0.3 })], [1.2, {}]] },
-    // P1 tags: aims the tag gun (wind 0.6 s), then 5 shots: each kicks the hand, body and head back ~50 px, then overshoots forward
-    tags: { dur: 1.5, keys: [[0, {}], [0.45, P(AIM, { lean: -0.08 })],
-      ...[0.6, 0.76, 0.92, 1.08, 1.24].flatMap(t => [[t, P(AIM, { lean: -0.1, dx: -6, sx: 1.04, sy: 0.96 })],
+    cart: { dur: RWT.cart + 0.65, keys: [[0, {}], [RWT.cart - 0.15, P(TUCK, { lean: 0.12, head: 0.08, sy: 0.92, sx: 1.05 })],
+                             [RWT.cart, P(FLING, { lean: -0.18, head: 0.06, jaw: -0.42, sy: 1.08, sx: 0.95 })], [RWT.cart + 0.4, P(AIM, { lean: -0.12, jaw: -0.3 })], [RWT.cart + 0.65, {}]] },
+    // P1 tags: aims the tag gun (wind RWT.tags.wind), then 5 shots: each kicks the hand, body and head back ~50 px, then overshoots forward
+    tags: { dur: TL + 0.26, keys: [[0, {}], [TG.wind - 0.15, P(AIM, { lean: -0.08 })],
+      ...TS.flatMap(t => [[t, P(AIM, { lean: -0.1, dx: -6, sx: 1.04, sy: 0.96 })],
         [t + 0.04, P(KICK, { lean: 0.3, uy: -8, dx: 14, jaw: -0.3, sx: 0.88, sy: 1.12 })], [t + 0.09, P(KICK, { lean: 0.26, uy: -6, dx: 12, jaw: -0.24, sx: 0.9, sy: 1.1 })]]),
-      [1.42, P(AIM, { lean: -0.08 })], [1.5, {}]] },
-    // P1 coins: pulls the hand back and crouches (0.7 s), then flings forward (the catapult lobs)
-    coins: { dur: 1.2, keys: [[0, {}], [0.6, P(BACK, { lean: 0.16, head: 0.08, sy: 0.88, sx: 1.07 })],
-                              [0.72, P(FLING, { lean: -0.2, jaw: -0.35, sy: 1.1, sx: 0.94 })], [0.95, P(AIM, { lean: -0.12 })], [1.2, {}]] },
-    // P2 swarm: whistles up the rats (warn 1.0 s): head back, mouth open, waving the gun
-    swarm: { dur: 1.4, keys: [[0, {}], [0.15, { sy: 0.9, sx: 1.06 }], [0.3, P(AIMUP, { head: 0.3, jaw: -0.5, lean: 0.2, uy: -12, sy: 1.08, sx: 0.95 })],
-      ...[0.42, 0.56, 0.7, 0.84, 0.98].map((t, i) => [t, P(i % 2 ? AIM : AIMUP, { head: i % 2 ? 0.22 : 0.32, jaw: -0.5, lean: i % 2 ? 0.14 : 0.22, uy: i % 2 ? -6 : -12, ha: i % 2 ? -0.4 : 0.42 })]), [1.4, {}]] },
+      [TL + 0.18, P(AIM, { lean: -0.08 })], [TL + 0.26, {}]] },
+    // P1 coins: pulls the hand back and crouches (wind RWT.coins), then flings forward (the catapult lobs)
+    coins: { dur: RWT.coins + 0.5, keys: [[0, {}], [RWT.coins - 0.1, P(BACK, { lean: 0.16, head: 0.08, sy: 0.88, sx: 1.07 })],
+                              [RWT.coins + 0.02, P(FLING, { lean: -0.2, jaw: -0.35, sy: 1.1, sx: 0.94 })], [RWT.coins + 0.25, P(AIM, { lean: -0.12 })], [RWT.coins + 0.5, {}]] },
+    // P2 swarm: whistles up the rats (warn RWT.swarm): head back, mouth open, waving the gun
+    swarm: { dur: RWT.swarm + 0.4, keys: [[0, {}], [0.15, { sy: 0.9, sx: 1.06 }], [0.3, P(AIMUP, { head: 0.3, jaw: -0.5, lean: 0.2, uy: -12, sy: 1.08, sx: 0.95 })],
+      ...from(0.42, RWT.swarm - 0.02, 0.14).map((t, i) => [t, P(i % 2 ? AIM : AIMUP, { head: i % 2 ? 0.22 : 0.32, jaw: -0.5, lean: i % 2 ? 0.14 : 0.22, uy: i % 2 ? -6 : -12, ha: i % 2 ? -0.4 : 0.42 })]), [RWT.swarm + 0.4, {}]] },
     // P2/P3 burrow: crouch, spring, dive down a hole in the bar top (hidden from 0.7 s); unburrow pops back out
     burrow: { dur: 0.9, keys: [[0, {}], [0.3, P(TUCK, { sy: 0.84, sx: 1.12, lean: -0.08 })], [0.45, P(DIVE, { dy: -30, sy: 1.15, sx: 0.8, sink: true, dust: 0.3 })],
                                [0.7, P(DIVE, { dy: 460, sy: 1.15, sx: 0.65, sink: true, dust: 1 })], [0.9, { dy: 460, sink: true, dust: 0.4 }]] },
@@ -18851,10 +18856,10 @@ window.RAT_RIG = {"pieces":{"tail":"M94.8 -374.38C97.47 -374.68 105.78 -374.56 1
     // P2 crates: aims up at the falling crate (tele 1.0 s), then hops and stomps to send the wave
     crates: { dur: 1.3, keys: [[0, {}], [0.35, P(AIMUP, { head: 0.14, lean: 0.06 })], [0.85, P(AIMUP, { head: 0.14, lean: 0.06, uy: -6, sy: 1.04 })],
                                [0.93, P(TUCK, { sy: 0.86, sx: 1.1 })], [1.0, P(TUCK, { dy: -28, sy: 1.12, sx: 0.92, head: 0.08 })], [1.1, P(TUCK, { dy: -30, sy: 1.1, sx: 0.93, head: 0.08 })], [1.17, P(SLAM, { sy: 0.84, sx: 1.14, jaw: -0.3, lean: -0.1 })], [1.3, {}]] },
-    // P2 whip: belly laugh while the sharks bite (bite at 1.3 s): hand to the belly, body bouncing; the tail lashes: swings up and out stretched (1.3x), snaps back down
-    whip: { dur: 1.4, keys: [[0, {}], [0.2, P(BELLY, { lean: 0.14, head: 0.16, jaw: -0.4, tail: 0.3, ts: 0.92 })],
-      ...[0.36, 0.52, 0.68, 0.84, 1.0, 1.16].map((t, i) => [t, P(BELLY, { lean: i % 2 ? 0.08 : 0.2, head: i % 2 ? 0.1 : 0.24, jaw: i % 2 ? -0.12 : -0.48, uy: i % 2 ? 4 : -16,
-        sy: i % 2 ? 0.9 : 1.08, sx: i % 2 ? 1.06 : 0.95, tail: i % 2 ? 0.32 : -0.6, ts: i % 2 ? 0.92 : 1.3 })]), [1.4, {}]] },
+    // P2 whip: belly laugh while the sharks bite (bite at RWT.whip): hand to the belly, body bouncing; the tail lashes: swings up and out stretched (1.3x), snaps back down
+    whip: { dur: RWT.whip + 0.1, keys: [[0, {}], [0.2, P(BELLY, { lean: 0.14, head: 0.16, jaw: -0.4, tail: 0.3, ts: 0.92 })],
+      ...from(0.36, RWT.whip - 0.14, 0.16).map((t, i) => [t, P(BELLY, { lean: i % 2 ? 0.08 : 0.2, head: i % 2 ? 0.1 : 0.24, jaw: i % 2 ? -0.12 : -0.48, uy: i % 2 ? 4 : -16,
+        sy: i % 2 ? 0.9 : 1.08, sx: i % 2 ? 1.06 : 0.95, tail: i % 2 ? 0.32 : -0.6, ts: i % 2 ? 0.92 : 1.3 })]), [RWT.whip + 0.1, {}]] },
     // P3 cheese: big wind-up (0.9 s): hand back, body coiled; then slams down, squashing
     cheese: { dur: 1.3, keys: [[0, {}], [0.75, P(BACK, { lean: 0.2, head: 0.12, uy: -10, sy: 1.08, sx: 0.95 })],
                                [0.88, P(SLAM, { lean: -0.22, head: -0.06, jaw: -0.35, uy: 6, sy: 0.84, sx: 1.12 })], [1.1, P(SLAM, { lean: -0.14 })], [1.3, {}]] },
@@ -18864,8 +18869,8 @@ window.RAT_RIG = {"pieces":{"tail":"M94.8 -374.38C97.47 -374.68 105.78 -374.56 1
                                  [0.71, P(AIMUP, { dy: -36, sy: 1.14, sx: 0.92, jaw: -0.3 })], [0.83, P(AIMUP, { dy: -38, sy: 1.08, sx: 0.95, jaw: -0.3 })],
                                  [0.91, P(SLAM, { sy: 0.8, sx: 1.18 })], [1.2, {}]] },
     // P3 lights: summons the squid: crouch, then rears back aiming up, trembling
-    lights: { dur: 1.4, keys: [[0, {}], [0.3, P(TUCK, { lean: -0.1, sy: 0.86, sx: 1.1, head: -0.04 })], [0.45, P(AIMUP, { head: 0.3, jaw: -0.5, lean: 0.26, uy: -12, sy: 1.1, sx: 0.94 })],
-      ...shake([0.55, 0.63, 0.71, 0.79, 0.87, 0.95, 1.03, 1.11], P(AIMUP, { head: 0.3, jaw: -0.5, lean: 0.26, uy: -12, sy: 1.1, sx: 0.94 }), 3), [1.4, {}]] },
+    lights: { dur: RWT.lights + 0.7, keys: [[0, {}], [RWT.lights - 0.4, P(TUCK, { lean: -0.1, sy: 0.86, sx: 1.1, head: -0.04 })], [RWT.lights - 0.25, P(AIMUP, { head: 0.3, jaw: -0.5, lean: 0.26, uy: -12, sy: 1.1, sx: 0.94 })],
+      ...shake(from(RWT.lights - 0.15, RWT.lights + 0.41, 0.08), P(AIMUP, { head: 0.3, jaw: -0.5, lean: 0.26, uy: -12, sy: 1.1, sx: 0.94 }), 3), [RWT.lights + 0.7, {}]] },
     // P2 -> P3 roar (1 s): crouch, then thrusts the head forward, jaw wide, hand dropped to the hip, shaking
     roar: { dur: 1.0, keys: [[0, {}], [0.12, P(LOW, { lean: 0.12, head: 0.2, sy: 0.88, sx: 1.08 })], [0.24, P(LOW, { lean: -0.14, head: -0.12, jaw: -0.62, uy: -8, sy: 1.1, sx: 0.94 })],
       ...shake([0.32, 0.4, 0.48, 0.56, 0.64, 0.72, 0.8], P(LOW, { lean: -0.14, head: -0.12, jaw: -0.62, uy: -8, sy: 1.1, sx: 0.94 }), 5), [1.0, {}]] },
