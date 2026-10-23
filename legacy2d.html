@@ -20002,7 +20002,9 @@ window.MOKI_FX = {"aura":[{"d":"M-17.25 -475.5C-9.41 -476.11 -0.79 -475.79 7.5 -
    Pose units: px for dx/dy/my/uy/hdx/hdy/hx/hy/fx/fy/rum, radians for lean/head/ch/ha/fa/tuft, factors for sx/sy/bsx/bsy/hsx/hsy/hs/fs/tsq,
    0..1 for lit/pumpL/pumpR/eye/pulse/alpha/dizzy/squint; hbend/fbend = hose arc (fraction of its span, sign = side).
    hp = peace-glove pose: V (the traced glove) | grip | open | point | splay | limp (moki_glove.js); hbk = glove behind the head.
-   a4: tells sized for the game view (checked by tools/tell_check.py at game size). */
+   a4: tells sized for the game view (checked by tools/tell_check.py at game size).
+   Group D (2026-10-23): the sim's eggs (2 beats apart), tracer (lock 1.0, beam 1.2) and flames (ign 1.2, fire 0.75) timings changed;
+   the acts below keep the D11 keys and djMokiNew.js (WARP2) warps the attack clock onto them. */
 (function () {
   const P = (...o) => Object.assign({}, ...o);
   const BEAT = { hdy: 4, head: 0.03, bsy: 0.97, bsx: 1.015, hsy: 0.96, hsx: 1.03, pumpL: 1, pumpR: 1 };   // the downbeat: nod, squash, speaker pump
@@ -20879,7 +20881,24 @@ window.MOKI_P1_RIG = {"arc":[[-114.0,-212.72],[-110.0,-211.74],[-106.0,-210.8],[
   const TA = { stun: 0.55, slide: 0.6, dj: 1.28 };   // transition A: the can's act ends (MM.tA.stun), its slide off, the DJ's transIn start (its deck lands 0.42 in = 1.7 = MM.tA.deckAt)
   const P1N = { sphere: 'cloud', bombs: 'toss', hands: 'lid', grate: 'peek' };
   // the attack clock -> the act clock (piecewise linear, then 1:1): the act's lobs / throw / burp land on the sim's spawns
-  const WARP = { bombs: [[0, 0], [0.6, 0.9], [1.3, 1.5], [2.0, 2.1], [2.9, 3.0]], sphere: [[0, 0], [0.5, 1.0], [1.5, 2.0]], hands: [[0, 0], [0.6, 1.1]] };
+  // group D (2026-10-23, MM.rw copies): bombs lob every 0.8 s (1st / 3rd / 5th lob = the act's 3 lobs), the lid's wind 1.5 s
+  const WARP = { bombs: [[0, 0], [0.6, 0.9], [2.2, 1.5], [3.8, 2.1], [4.7, 3.0]], sphere: [[0, 0], [0.5, 1.0], [1.5, 2.0]], hands: [[0, 0], [1.5, 1.1]] };
+  const HANDS_WIND = 1.5, HANDS_TAIL = 0.4;   // MM.rw.hands wind / tail
+  // P2 / P3 acts were keyed to the D11 numbers; group D changed the sim's timings, so the attack clock is warped onto the act clock:
+  //   eggs   discs 2 beats apart (1.2 / 2.4 / 3.6; the act flings at 1.2 / 1.8 / 2.4): the wind-up pose is held between throws
+  //   tracer per line track 1.2, lock 1.0, beam 1.2, gap 0.4 = 3.8 s (act loop 2.7: track 1.2, tremble 1.2-1.5, beam 1.5-2.3, back 2.3-2.7):
+  //          the lock loops the tremble, the beam recoil is stretched
+  //   flames per band move 0.6 + ign 1.2, fire 0.75 = 2.55 s (act: fire 1.1-2.5 / 3.6-5.0): the stream starts on the sim's fire
+  const TR = { track: 1.2, lock: 1.0, beam: 1.2, gap: 0.4 }, TR_ACT = 2.7;
+  const WARP2 = {
+    eggs: (t) => warp([[0, 0], [1.65, 1.65], [2.35, 1.75], [2.4, 1.8], [2.85, 2.25], [3.55, 2.35], [3.6, 2.4]], t),
+    tracer: (t) => {
+      const per = TR.track + TR.lock + TR.beam + TR.gap, k = Math.floor(t / per), u = t - k * per, l0 = TR.track, b0 = l0 + TR.lock, g0 = b0 + TR.beam;
+      const v = u < l0 ? u : u < b0 - 0.05 ? 1.2 + ((u - l0) % 0.25) : u < b0 ? 1.45 + (u - (b0 - 0.05)) : u < g0 ? 1.5 + ((u - b0) * 0.8) / TR.beam : 2.3 + ((u - g0) * 0.4) / TR.gap;
+      return k * TR_ACT + v;
+    },
+    flames: (t) => warp([[0, 0], [1.8, 1.1], [2.55, 2.5], [4.35, 3.6], [5.1, 5.0], [5.5, 5.4]], t),
+  };
   const warp = (pts, t) => {
     for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [a0, b0] = pts[i - 1], [a1, b1] = pts[i]; return b0 + ((b1 - b0) * (t - a0)) / (a1 - a0); }
     const [a, b] = pts[pts.length - 1]; return b + (t - a);
@@ -20932,8 +20951,8 @@ window.MOKI_P1_RIG = {"arc":[[-114.0,-212.72],[-110.0,-211.74],[-106.0,-210.8],[
     let t = T - st.t0, opt;
     if (a && !dj && WARP[name] && st.act === P1N[name]) {
       t = warp(WARP[name], a.t);
-      if (name === 'hands') opt = { catchT: 1.1 + Math.max(0.6, (a.len || 3) - 0.4 - 0.6) };   // the lid comes back as the attack ends (its tail 0.4)
-    } else if (a && st.act !== 'hurt' && st.act !== 'p3_hurt' && st.act !== 'idle' && st.act !== 'p3_idle') t = a.t;
+      if (name === 'hands') opt = { catchT: 1.1 + Math.max(0.6, (a.len || 3) - HANDS_TAIL - HANDS_WIND) };   // the lid comes back as the attack ends (its tail 0.4)
+    } else if (a && dj && WARP2[name] && (st.act === name || st.act === 'p3_' + name)) t = WARP2[name](a.t); else if (a && st.act !== 'hurt' && st.act !== 'p3_hurt' && st.act !== 'idle' && st.act !== 'p3_idle') t = a.t;
     return [{ who: dj ? 'dj' : 'p1', act: st.act, t, opt }];
   }
 
