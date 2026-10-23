@@ -21596,7 +21596,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
 (function () {
   const PI = Math.PI, K = 409 / 350;
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v), sm = (u) => { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }, lerp = (a, b, k) => a + (b - a) * k;
-  const MET = { tele: 0.6, n: 3, gap: 1.5 }, SEED = { tele: 0.7, n: 8, gap: 0.25 }, GLV = { tele: 0.6, outT: 0.22, hold: 0.35, inT: 0.4 }, XF = { burst: 0.9, swell: 0.12 };
+  const MET = { tele: 0.6, n: 3, gap: 2.3 }, SEED = { tele: 0.7, n: 5, gap: 0.9 }, GLV = { tele: 0.9, outT: 0.1, hold: 0.35, inT: 0.21 }, XF = { burst: 0.9, swell: 0.12 };
   const REST = { L: [-148.17, -147.59], R: [128.66, -179.58] };      // = arm_fit.js wrists (B) in the origin frame
   const G1 = [116, -190, -0.35], G2 = [-104, -182, PI + 0.35];       // the game's rest fists (design frame)
   const FL = 0.75;   // our flaps are longer than the game's: a bit less swing
@@ -21642,7 +21642,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       return P;
     }
     if (n === 'bounce') {
-      const hi = (f.hy || 0) > 140;
+      const hi = d.H ? d.H > 400 : (f.hy || 0) > 140;   // Group D: low hops go 330 high now, so ask the hop itself
       if (d.air) {
         const u = clamp((at - d.t0) / (d.T || 1), 0, 1), st = Math.sin(PI * u);
         P.name = 'bounce:air'; P.lift = 0; P.sy = 1.08 + (hi ? 0.12 : 0.06) * (1 - Math.abs(u - 0.35) * 1.5); P.sx = 2 - P.sy;
@@ -21779,9 +21779,9 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const nrm = (x, y) => { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
   const gy0 = () => (typeof PGY !== 'undefined' ? PGY : 392);
   // look-only copies of the port's data (src/data/bosses.json HT.p1 / HT.xf; legacy's HT in this page has not got the D10 numbers)
-  const MET = { tele: 0.6, n: 3, gap: 1.5, mouthDx: 120, baseH: 115 };
-  const SEED = { tele: 0.7, n: 8, gap: 0.25 };
-  const GLV = { tele: 0.6, outT: 0.22, hold: 0.35, inT: 0.4, y0: 100, y1: 46 };
+  const MET = { tele: 0.6, n: 3, gap: 2.3, mouthDx: 120, baseH: 115 };
+  const SEED = { tele: 0.7, n: 5, gap: 0.9 };
+  const GLV = { tele: 0.9, outT: 0.1, hold: 0.35, inT: 0.21, y0: 100, y1: 46 };
   const XF = { burst: 0.9, swell: 0.12 };
 
   /* ---------------- the pose: spring targets + instant looks (design frame: forward = +x, feet at 0, up = -y) ---------------- */
@@ -21825,7 +21825,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       return P;
     }
     if (n === 'bounce') {   // squash before the hop, stretched tall in the air (flaps flap, snot trails), a hard squash + dust on landing
-      const hi = (f.hy || 0) > 140;
+      const hi = d.H ? d.H > 400 : (f.hy || 0) > 140;   // Group D: low hops go 330 high now, so ask the hop itself
       if (d.air) {
         const u = clamp((at - d.t0) / (d.T || 1), 0, 1), st = Math.sin(Math.PI * u);
         P.name = 'bounce:air'; P.lift = 0; P.sy = 1.08 + (hi ? 0.12 : 0.06) * (1 - Math.abs(u - 0.35) * 1.5); P.sx = 2 - P.sy;
