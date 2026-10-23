@@ -22223,8 +22223,8 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const BSCL = '#fbf6ec', BPUP = '#0b0810', BLIP = '#c76f68', BLIPL = '#4a1c18', BNOS = '#5a2c20', BEARIN = '#c9806a', BGLOW = '#ff5fae';
   const HCX = 200; let HCY = 258;   // the head centre in the datum (HCY: set below from the size)
   // look-only copies of the port's P2 timings (src/data/bosses.json HT.p2; legacy's HT in this page has not got them)
-  const P2D = { dive: { tele: 1.0, diveT: 0.45, stay: 1.2 }, beam: { moveT: 0.6, charge: 1.3, beamT: 1.2 },
-    ha: { tele: 0.5, gap: 0.75, n: 4 }, ufo: { tele: 0.8 }, pyr: { tele: 0.8, every: 2.0, eyeT: 0.7, n: 3, beamT: 0.5 } };
+  const P2D = { dive: { tele: 1.0, diveT: 0.65, stay: 0.6 }, beam: { moveT: 0.6, charge: 1.0, beamT: 3.0 },
+    ha: { tele: 0.7, gap: 0.75, n: 4 }, ufo: { tele: 0.8 }, pyr: { tele: 0.8, every: 2.0, eyeT: 1.3, n: 3, beamT: 0.85 } };
   // Size and shape (fix round): drawn to the port's data like the 3D head: HT.p2.r = 185 (look-only copy; this page's legacy HT
   // has its old r 90), so the head is 2r wide (ears out) and the chin sits r below the centre (the hit circle's bottom = the
   // floor in the dive). Proportions measured from the 3D frame (docs/art/d30_art.png): width / height ~0.81, broad full
