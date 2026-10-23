@@ -21258,35 +21258,35 @@ window.MG_RIG = {"pieces":{"head":"M-119.2 -228.38C-115.07 -228.53 -99.35 -228.6
     // hurt (0.4 s): jolted back, wings flung up, beak open (the game flashes her white itself; flash here is for the preview)
     hurt: { dur: 0.4, keys: [[0, REST0], [0.05, { lean: 0.16, head: 0.25, jaw: -0.1, wf: -0.55, wn: 0.45, sy: 1.07, sx: 0.93, dx: 9, lan: 0.3, flash: true }],
       [0.2, { lean: 0.08, head: 0.1, wf: -0.3, wn: 0.25, dx: 4, lan: -0.15 }], [0.4, REST0]] },
-    // crowRow (4.15 s: per row wind 0.5, then 4 birds 0.35 apart; rows 1.6 apart): rears up, head back, then caws them out on fast beats
-    crowRow: { dur: 4.15, keys: [[0, REST0], [0.45, REAR], [0.5, REAR], ...beats(0.55, 0.3, 3, 1.15, CAW),
-      [1.6, REAR], [2.1, REAR], ...beats(2.15, 0.3, 3, 1.15, CAW), ...beats(3.05, 0.7, 1, 1, {}), [4.15, REST0]] },
-    // talons (one volley 1.7 s: tele 0.6, shots at 0.6, gap 1.1; the game plays 2): rears back with the feet pulled in, then kicks them forward
-    talons: { dur: 1.7, loop: true, keys: [[0, REST0], [0.45, P(WIND, { legs: -0.45, lean: 0.2 })], [0.6, P(WIND, { legs: -0.5, lean: 0.22, sy: 0.85 })],
-      [0.7, { legs: 0.45, lean: 0.18, wf: -0.4, wn: 0.4, head: -0.08, sy: 1.06, sx: 0.96, dx: -16, lan: 0.2 }], [0.95, { legs: 0.4, lean: 0.14, wf: -0.3, wn: 0.3, dx: -12 }], ...beats(1.0, 0.7, 1, 1, {})] },
-    // ram, wind (0.5 s, the game turns her toward the locked point): pulls back hard, wings up, chin tucked
-    ramWind: { dur: 0.5, keys: [[0, REST0], [0.4, P(WIND, { lean: 0.22, head: -0.16, dx: 10, legs: -0.3 })], [0.5, P(WIND, { lean: 0.24, head: -0.16, dx: 12, legs: -0.3, sy: 0.85 })]] },
+    // talons (Group D: one volley; tele 1.04, shots at 1.04, the clip ends at 2.08): rears back with the feet pulled in, then kicks them forward
+    talons: { dur: 2.08, keys: [[0, REST0], [0.85, P(WIND, { legs: -0.45, lean: 0.2 })], [1.04, P(WIND, { legs: -0.5, lean: 0.22, sy: 0.85 })],
+      [1.14, { legs: 0.45, lean: 0.18, wf: -0.4, wn: 0.4, head: -0.08, sy: 1.06, sx: 0.96, dx: -16, lan: 0.2 }], [1.38, { legs: 0.4, lean: 0.14, wf: -0.3, wn: 0.3, dx: -12 }], ...beats(1.38, 0.7, 1, 1, {})] },
+    // ram, wind (Group D: Beppi's 1.0 s warning; the game slides her to the locked height): pulls back hard, wings up, chin tucked
+    ramWind: { dur: 1.0, keys: [[0, REST0], [0.8, P(WIND, { lean: 0.22, head: -0.16, dx: 10, legs: -0.3 })], [1.0, P(WIND, { lean: 0.24, head: -0.16, dx: 12, legs: -0.3, sy: 0.85 })]] },
     // ram, dash (0.7 s): a dart: wings swept back and folded, feet tucked back, lantern streaming (the game's tilt points the beak)
     ramDash: { dur: 0.7, keys: [[0, P(WIND, { lean: 0.22, dx: 12 })], [0.14, DASH], ...shake([0.18, 0.28, 0.38, 0.48, 0.58], DASH, 2), [0.7, DASH]] },
-    // whistle, blow (4.1 s: tele 0.8 + 6 bursts 0.6 apart): head thrown back, beak wide, furious full beats
+    // ram, turn (Group D: Beppi's 1.42 s turn; the game mirrors her at 0.71): brakes hard (leans back, wings flared), then shakes it off
+    ramTurn: { dur: 1.42, keys: [[0, DASH], [0.15, P(WIND, { lean: 0.28, wf: -0.7, wn: 0.6, legs: 0.4, dx: 8 })], ...shake([0.25, 0.35, 0.45, 0.55, 0.65], P(WIND, { lean: 0.2, wf: -0.6, wn: 0.5 }), 3),
+      [0.71, P(WIND, { lean: 0.1, sy: 0.9 })], ...beats(0.72, 0.7, 1, 1, {})] },
+    // whistle, blow (Group D: tele 0.42 + 30 rings 0.25 apart = 7.7 s): head thrown back, beak wide, furious full beats
     whistle: { dur: 0.33, loop: true, keys: beats(0, 0.33, 1, 1.3, { lid: 0.4, brow: 1, head: 0.32, jaw: -0.13, lean: 0.08 }) },
-    // whistle, rest (2.5 s free-hit window): spent: head hung, eyes half shut, wings drooping, slow heavy breaths
+    // whistle, end (0.79 s, Cuphead's feathers end + hesitate pose; the 3.4 s hesitate follows as idle): spent: head hung, eyes half shut, wings drooping, slow heavy breaths
     whistleRest: { dur: 1.25, loop: true, keys: [[0, SLUMP], [0.62, P(SLUMP, { wf: 0.8, wfy: 0.46, head: -0.4, lid: 0.6, dy: 12, sy: 0.9, sx: 1.05 })], [1.25, SLUMP]] },
-    // escort (tele 0.5, then a crow leaves her every 1.6 s): puffs up (the crow inside), then shoves forward to let it out
-    escort: { dur: 1.6, loop: true, keys: [[0, REST0], [0.25, { sx: 1.12, sy: 0.92, wf: -0.45, wn: 0.45, lean: 0.1, head: -0.08, dx: 4 }], [0.4, { sx: 1.14, sy: 0.9, wf: -0.5, wn: 0.5, lean: 0.12, head: -0.1, dx: 5 }],
-      [0.52, P(STRIKE, { jaw: -0.12 })], [0.75, P(STRIKE, { jaw: -0.08, dx: -6 })], ...beats(0.9, 0.7, 1, 1, {})] },
-    // bulbs (tele 0.4, then 4 bulbs 0.55 apart): heaves the lantern up with her beak and shakes it hard (the game lights its hatch red)
-    bulbs: { dur: 2.6, keys: [[0, REST0], [0.35, P(WIND, { head: 0.32, lan: -0.5 })], [0.4, P(WIND, { head: 0.32, lan: -0.5 })],
-      ...Array.from({ length: 14 }, (_, i) => [0.5 + i * 0.14, { head: 0.28 + (i % 2 ? 0.1 : -0.04), lan: i % 2 ? 0.18 : -0.18, wf: i % 2 ? 0.3 : -0.3, wn: i % 2 ? -0.2 : 0.2, sy: i % 2 ? 1.04 : 0.97, dy: i % 2 ? -3 : 2 }]), [2.6, REST0]] },
-    // gust (tele 0.7 sip, 0.35 blow): a big breath in (puffed round, beak open), then blows it out forward
-    gust: { dur: 1.9, keys: [[0, REST0], [0.35, { jaw: -0.1, head: -0.12, sx: 1.12, sy: 0.92, wf: -0.45, wn: 0.4, lean: 0.12, dx: 5 }], [0.7, { jaw: -0.12, head: -0.14, sx: 1.14, sy: 0.9, wf: -0.5, wn: 0.45, lean: 0.14, dx: 6 }],
-      [0.8, { jaw: -0.13, head: 0.3, sx: 0.92, sy: 1.08, wf: 0.3, wn: -0.2, lean: -0.14, dx: -10, lan: 0.3 }], [1.05, { jaw: -0.12, head: 0.25, sx: 0.95, sy: 1.05, lean: -0.1, dx: -8, lan: 0.1 }], ...beats(1.2, 0.7, 1, 1, {})] },
-    // cyclone (tele 0.6 swirl, 0.4 strike): whips the wind up with quick beats, then one huge downstroke sends it off
-    cyclone: { dur: 1.8, keys: [[0, REST0], ...beats(0.0, 0.15, 3, 1.3, { lean: 0.06, sy: 0.96 }), [0.6, P(WIND, { wf: -0.75, wfs: 1.08, sy: 0.85 })], [0.64, P(WIND, { wf: -0.8, wfs: 1.08, sy: 0.84 })],
-      [0.74, P(STRIKE, { wf: 0.85, wfy: 0.4, wn: -0.55, sy: 1.12, dy: -10 })], [0.84, P(STRIKE, { wf: 0.85, wfy: 0.4, wn: -0.5, sy: 1.1, dy: -9 })], [1.0, P(STRIKE, { wfy: 0.5, sy: 1.02 })], ...beats(1.1, 0.7, 1, 1, {})] },
-    // loot (tele 0.7 sack opens, 4.0 s of throws every 0.4): bounces and chatters, the head bobs with each throw (sack = the game's shape)
-    loot: { dur: 4.7, keys: [[0, REST0], [0.6, P(WIND, { jaw: -0.12 })], [0.7, P(WIND, { jaw: -0.12 })],
-      ...Array.from({ length: 10 }, (_, i) => [[0.7 + i * 0.4, { jaw: -0.13, head: 0.16, lan: 0.25, wf: 0.45, wn: -0.2, sy: 1.06, sx: 0.96, dy: -4, dx: -4 }], [0.9 + i * 0.4, { jaw: -0.02, head: -0.06, lan: -0.15, wf: -0.25, wn: 0.25, sy: 0.95, sx: 1.04, dy: 3 }]]).flat(), [4.7, REST0]] },
+    // escort (Group D: tele 0.46, then a ghost leaves her every 4.4 s): puffs up (the crow inside), then shoves forward to let it out
+    escort: { dur: 4.4, loop: true, keys: [[0, REST0], [0.25, { sx: 1.12, sy: 0.92, wf: -0.45, wn: 0.45, lean: 0.1, head: -0.08, dx: 4 }], [0.4, { sx: 1.14, sy: 0.9, wf: -0.5, wn: 0.5, lean: 0.12, head: -0.1, dx: 5 }],
+      [0.48, P(STRIKE, { jaw: -0.12 })], [0.75, P(STRIKE, { jaw: -0.08, dx: -6 })], ...beats(0.9, 0.7, 5, 1, {})] },
+    // bulbs (Group D: tele 0.29, then 4 drones 1.0 apart, the hatch closes 1.4 s after): heaves the lantern up with her beak and shakes it hard
+    bulbs: { dur: 4.69, keys: [[0, REST0], [0.25, P(WIND, { head: 0.32, lan: -0.5 })], [0.29, P(WIND, { head: 0.32, lan: -0.5 })],
+      ...Array.from({ length: 24 }, (_, i) => [0.35 + i * 0.14, { head: 0.28 + (i % 2 ? 0.1 : -0.04), lan: i % 2 ? 0.18 : -0.18, wf: i % 2 ? 0.3 : -0.3, wn: i % 2 ? -0.2 : 0.2, sy: i % 2 ? 1.04 : 0.97, dy: i % 2 ? -3 : 2 }]), [4.69, REST0]] },
+    // gust (Group D: summon 0.54 s, the seahorse rises at 0.54, the summon ends at 1.83): a big breath in (puffed round, beak open), then blows it out forward
+    gust: { dur: 1.83, keys: [[0, REST0], [0.27, { jaw: -0.1, head: -0.12, sx: 1.12, sy: 0.92, wf: -0.45, wn: 0.4, lean: 0.12, dx: 5 }], [0.54, { jaw: -0.12, head: -0.14, sx: 1.14, sy: 0.9, wf: -0.5, wn: 0.45, lean: 0.14, dx: 6 }],
+      [0.64, { jaw: -0.13, head: 0.3, sx: 0.92, sy: 1.08, wf: 0.3, wn: -0.2, lean: -0.14, dx: -10, lan: 0.3 }], [0.89, { jaw: -0.12, head: 0.25, sx: 0.95, sy: 1.05, lean: -0.1, dx: -8, lan: 0.1 }], ...beats(1.1, 0.7, 1, 1, {})] },
+    // cyclone (Group D: Hilda's cast, the tornado leaves at 1.24, the stop ends at 2.7): whips the wind up with quick beats, then one huge downstroke sends it off
+    cyclone: { dur: 2.7, keys: [[0, REST0], ...beats(0.0, 0.2, 5, 1.3, { lean: 0.06, sy: 0.96 }), [1.18, P(WIND, { wf: -0.75, wfs: 1.08, sy: 0.85 })], [1.24, P(WIND, { wf: -0.8, wfs: 1.08, sy: 0.84 })],
+      [1.34, P(STRIKE, { wf: 0.85, wfy: 0.4, wn: -0.55, sy: 1.12, dy: -10 })], [1.44, P(STRIKE, { wf: 0.85, wfy: 0.4, wn: -0.5, sy: 1.1, dy: -9 })], [1.6, P(STRIKE, { wfy: 0.5, sy: 1.02 })], ...beats(1.7, 0.7, 1, 1, {}), [2.7, REST0]] },
+    // loot (Group D: sack opens 0.67 s, then 4-5 throws 0.667 apart, the end 0.62): bounces and chatters, the head bobs with each throw (sack = the game's shape)
+    loot: { dur: 3.96, keys: [[0, REST0], [0.6, P(WIND, { jaw: -0.12 })], [0.67, P(WIND, { jaw: -0.12 })],
+      ...Array.from({ length: 5 }, (_, i) => [[0.67 + i * 0.667, { jaw: -0.13, head: 0.16, lan: 0.25, wf: 0.45, wn: -0.2, sy: 1.06, sx: 0.96, dy: -4, dx: -4 }], [0.97 + i * 0.667, { jaw: -0.02, head: -0.06, lan: -0.15, wf: -0.25, wn: 0.25, sy: 0.95, sx: 1.04, dy: 3 }]]).flat(), [3.96, REST0]] },
     // roar = the phase change (2.0 s; the game makes her untouchable): crouch, then wings flung wide, head back, beak open, shaking with rage
     roar: { dur: 2.0, keys: [[0, REST0], [0.3, P(WIND, { sy: 0.84 })], [0.45, ROAR], ...shake([0.55, 0.63, 0.71, 0.79, 0.87, 0.95, 1.03, 1.11, 1.19, 1.27, 1.35, 1.43, 1.51], ROAR, 5), [1.7, P(WIND, { sy: 0.95 })], [2.0, REST0]] },
     // dying (2.0 s, then holds): sputters, then the wings give out and fold, eyes shut, head lolls; the lantern hangs plumb (the game drops her)
@@ -23090,6 +23090,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       else if (q.k === 'art') {
         const rp = q.rig && (q.rig.who === 'mg' ? window.MgNew : window.SgNew);
         if (rp) rp.draw(c, q);   // a ref-matched 2D rig: the Stargazer (src/render2d/sgNew.js), the Magpie (mgNew.js)
+        else if (q.tint && window.__flashFx && window.__flashFx.paint && window.__propArt) { c.translate(q.x, q.y); window.__flashFx.paint(c, (g) => window.__propArt(g, q), q.tint); }   // a shootable minion's hit flash (Magpie Group D)
         else if (bcFlash(q)) { if (q.a == null || q.a > 0) { c.globalAlpha = 1; c.translate(q.x, q.y); window.__flashFx.paint(c, (g) => window.__propArt(g, bcPlain(q))); } }   // round 3: Cuphead's multiply tint
         else if (!(q.no2d && window.SgNew)) { c.translate(q.x, q.y); if (window.__propArt) window.__propArt(c, q); }   // themed props (src/render/propArt.ts, handed in by legacyView); no2d: a piece the rig replaces
       }
