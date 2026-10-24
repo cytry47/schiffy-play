@@ -22318,13 +22318,16 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   // look-only copies of the port's P2 timings (src/data/bosses.json HT.p2; legacy's HT in this page has not got them)
   const P2D = { dive: { tele: 1.0, diveT: 0.65, stay: 0.6 }, beam: { moveT: 0.6, charge: 1.0, beamT: 3.0 },
     ha: { tele: 0.7, gap: 0.75, n: 4 }, ufo: { tele: 0.8 }, pyr: { tele: 0.8, every: 2.0, eyeT: 1.3, n: 3, beamT: 0.85 } };
-  // Size and shape (fix round): drawn to the port's data like the 3D head: HT.p2.r = 185 (look-only copy; this page's legacy HT
+  // Size and shape (fix round): drawn to the port's data like the 3D head: HT.p2.r (live, see sizeSync; this page's legacy HT
   // has its old r 90), so the head is 2r wide (ears out) and the chin sits r below the centre (the hit circle's bottom = the
   // floor in the dive). Proportions measured from the 3D frame (docs/art/d30_art.png): width / height ~0.81, broad full
   // cheeks down to the mouth, a broad rounded chin, ears ~0.21 of the head height, eyes ~0.4 of the width apart, lenses ~0.34.
-  const R2 = 185, OXL = 230, NEARO = 0.94, OX = -7;   // far half width (datum), the near side's outline a little narrower, centring
-  const SC = (2 * R2) / (OXL * (1 + NEARO)), CHIN = 481;
-  HCY = CHIN - R2 / SC;
+  // 2026-10-23 (Ruben): 25% smaller, r 139. R2 follows the live port data (window.__portHT.p2.r) when the page has it.
+  const OXL = 230, NEARO = 0.94, OX = -7;   // far half width (datum), the near side's outline a little narrower, centring
+  let R2 = 139, SC = (2 * R2) / (OXL * (1 + NEARO));
+  const CHIN = 481;
+  HCY = CHIN - R2 / SC;   // = CHIN - OXL (1 + NEARO) / 2: the datum centre does not depend on the size, only SC does
+  const sizeSync = () => { const L = window.__portHT, r = L && L.p2 && L.p2.r; if (typeof r === 'number' && r > 0 && r !== R2) { R2 = r; SC = (2 * R2) / (OXL * (1 + NEARO)); } };
   // the turn toward the player (TN 0 = the usual slight 3/4; 1 = turned hard toward the beam side, the mouth near the edge)
   let TN = 0;
   const NEARf = () => 0.9 - 0.3 * TN, FARf = () => 1 + 0.1 * TN, SHIFTf = () => -12 - 98 * TN;
@@ -22520,7 +22523,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   /* the hit flash: the whole head washed white as one shape (like the 3D's 0.55 flash; the wince still reads through) */
   const bc = document.createElement('canvas'), bg = bc.getContext('2d');
   function drawBaldFig(c, P, t, fl) {
-    const s = SC, lw = 11 / s / 2;   // datum px -> world: the data's head size (R2)
+    sizeSync(); const s = SC, lw = 11 / s / 2;   // datum px -> world: the data's head size (R2)
     c.save(); c.translate(P.dx, 0); if (P.flip) c.scale(-1, 1); c.rotate(P.rot); c.scale(s * P.sx, s * P.sy);
     if (!fl) { try { paintBald(c, P, t, lw); } finally { c.restore(); } return; }
     const m = c.getTransform(), q = Math.min(1.2, Math.max(0.3, Math.hypot(m.a, m.b))), X0 = -300, Y0 = -360, W = 600, H = 620;
