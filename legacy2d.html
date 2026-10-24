@@ -17923,7 +17923,9 @@ window.MONARCH_PARTS = {"jewels":[[-10.0,-447.0,8],[-44.0,-431.0,8],[27.5,-430.5
 
   /* ---------------- the pose: what the fight state asks for (spring targets + instant looks) ---------------- */
   // forward = +x in the design frame (paint flips him to face left, toward the arena; the mirrored arena flips the world)
-  const DR_FALL = 0.3;   // look only: the fall's share of the drop (data CM.drFall; legacy's CM in this page does not have the D9 numbers)
+  const DR_FALL0 = 0.3;   // look only: the fall's share of the drop (data CM.drFall; legacy's CM in this page does not have the D9 numbers)
+  // group E: the port hands its live CM (window.__portCM, src/render2d/legacyView.ts; the fight's Simple / Expert numbers merged in place)
+  const drFall = () => { const L = window.__portCM; return L && L.drFall > 0 ? L.drFall : DR_FALL0; };
   function evTimes(a, k) { const o = []; for (const e of a.ev || []) if (e.k === k) o.push(e.t); return o; }
   /* hand shapes: finger curl (thumb, index, middle, ring; 0 straight .. 1 curled into the palm) and spread */
   const HAND = {
@@ -17967,7 +17969,7 @@ window.MONARCH_PARTS = {"jewels":[[-10.0,-447.0,8],[-44.0,-431.0,8],[27.5,-430.5
       if (at < a.tVan) { const k = sm(at / Math.max(0.05, a.tVan)); P.sy = 1 - 0.12 * k; P.sx = 1 + 0.1 * k; P.gx = 150; P.gy = -300; P.gm = 'open'; P.gr = -1.3; P.bx = -110; P.by = -330; }
       else if (at < a.tLock) { const v = f.ssv == null ? 1 : f.ssv; P.sy = 1 + 0.7 * (1 - v); P.sx = 0.55 + 0.45 * v; P.gx = 70; P.gy = -390; P.gr = -1.6; P.gm = 'open'; P.bx = -40; P.by = -390; P.mouth = 'kiss'; P.tongue = 0; }
       else if (at < a.tLand && cy > 0) {
-        const fall = at >= a.tLand - DR_FALL;
+        const fall = at >= a.tLand - drFall();
         P.gx = 34; P.gy = -150; P.gr = -1.57; P.gm = 'grip'; P.gfs = 0.9; P.bx = -100; P.by = -320; P.br = -1.9;   // grips the parasol's handle (the D9 placeholder) from below
         P.sy = fall ? 1.14 : 1 + 0.03 * Math.sin(t * 6); P.sx = fall ? 0.9 : 1; P.mouth = fall ? 'open' : 'grin'; P.look = 0.2; P.name = fall ? 'drop:fall' : 'drop:hang';
       } else if (at < a.tLand + 0.35) { const k = (at - a.tLand) / 0.35; P.sy = 0.78; P.sx = 1.22; P.gx = 205; P.gy = -140; P.gr = 0.5; P.gm = 'open'; P.gsq = 1 - k; P.bx = -165; P.by = -170; P.br = 2.6; P.name = 'drop:land'; }
