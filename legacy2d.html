@@ -22644,6 +22644,10 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
          nugget while the Peashooter is in hand; other weapons' icons as before */
       const di = c.drawImage;
       if (hud1 && hud1.pea) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); nugget(this, 10.5, 7.5, 0, 2); this.restore(); return; } return di.call(this, im, ...a); };
+      /* D96 Spread: legacy's 3 gem icons (drawImage(gemTex, -9, -6, 20, 15) under translate(g) rotate(g2), :186) are one fan
+         of 3 gold coins: drawn on the first gem (its translate / rotate undone), the other two skipped */
+      let gi = 0; const di2 = c.drawImage;
+      c.drawImage = function (im, ...a) { if (im === gemTex && a.length === 4) { if (!gi++) { this.save(); this.rotate(.4); this.translate(4, 12); coinFan(this); this.restore(); } return; } return di2.call(this, im, ...a); };
       try { meter0(c); } finally { delete c.drawImage; } // the instance override goes, the prototype's drawImage is back
       c.restore(); }; }
   /* hide legacy's top-right debug labels (pose name + 'hits · broken · kills', 02_story_menus.js:934-936): skip exactly
@@ -22664,19 +22668,23 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     };
   }
   const clone = (v) => (v == null ? v : structuredClone(v));
-  /** The port's player bullets for legacy's draw. F2a: a Spread EX ball (sx) is drawn as a Spread gem (legacy has no ring
-   *  ball; an EX would draw as the big Peashooter comet). */
+  /** The port's player bullets for legacy's draw. F2a: a Spread EX ball (sx) was drawn as a Spread gem (legacy has no ring
+   *  ball); D96: both are gold coins now (vk 'cn' / 'cr', below), out of legacy's list. */
   /* F3 (item 0): legacy draws the Peashooter EX comet's head at the bullet point, but its hit circle sits b.off ahead (Cuphead's
      sprite and collider line up): the comet is drawn at the hit centre (the sim's hitAt), the hit data is untouched. */
   const atHit = (b) => { if (!b.ex || !b.off || b.sx) return b; const c = Math.cos(b.ang), n = Math.sin(b.ang), o = b.off; return { ...b, x: b.x + c * o[0] + n * o[1], y: b.y + n * o[0] - c * o[1] }; };
   /* D96 (gold re-theme): the Peashooter shot (legacy's plain bullet: no gem, no sx) and its EX (legacy's comet) leave legacy's
      draw for the F2 layer below: vk 'pn' a gold nugget, 'pi' a gold ingot (on its hit centre, atHit). peaL keeps them; the
      hit-fx lookups (bulN) still see them. */
+  /* D96 Spread: its shots (gem) and its EX ring balls (sx) leave legacy's draw too: vk 'cn' a spinning gold coin, 'cr' a
+     bigger one (8 in a ring), drawn on their hit centres (hitOf: the sim's hitAt); o = the launch point (the EX sparkle). */
   let peaL = [];
   const isPea = (b) => !b.gem && !b.sx;
+  const hitC = (b) => { if (!b.off) return b; const c = Math.cos(b.ang), n = Math.sin(b.ang), o = b.off; return { ...b, x: b.x + c * o[0] + n * o[1], y: b.y + n * o[0] - c * o[1] }; };
   const bulOf = (l) => { bulF2 = clone(l.filter((b) => b.vk)); const r = clone(l.filter((b) => !b.vk));
-    peaL = r.filter(isPea).map((b) => ({ ...atHit(b), vk: b.ex ? 'pi' : 'pn' }));
-    return r.filter((b) => !isPea(b)).map((b) => (b.sx ? { ...b, ex: 0, gem: 1 } : b)); };
+    peaL = r.filter(isPea).map((b) => ({ ...atHit(b), vk: b.ex ? 'pi' : 'pn' }))
+      .concat(r.filter((b) => b.gem || b.sx).map((b) => ({ ...hitC(b), vk: b.sx ? 'cr' : 'cn', o: [b.x - (b.vx || 0) * b.age, b.y - (b.vy || 0) * b.age] })));
+    return r.filter((b) => !isPea(b) && !b.gem && !b.sx); };
   const bulN = () => (peaL.length ? bul.concat(peaL) : bul);
   /** F3: legacy's enemy shots without the Giant Ghost's hearts (drawn by the F3 layer); the hearts kept for it. */
   let hearts = [];
@@ -22731,6 +22739,74 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     c.beginPath(); c.rect(-L / 2, -H / 2, L, H); c.lineWidth = ink; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke();
   }
   const twinkle = (c, r) => { c.beginPath(); for (let i = 0; i < 8; i++) { const a = (i * Math.PI) / 4, q = i % 2 ? r * .3 : r; c.lineTo(Math.cos(a) * q, Math.sin(a) * q); } c.closePath(); };
+  /* D96 Spread: a gold coin spinning about its upright axis. a = the face's width (1 = the face, .18 = the thinnest, < 0 = the
+     back face, the bone mirrored): the face is an ellipse r * |a| x r, the coin's rim thickness shows as a #d6952a band on the
+     turning side. Face: ink rim, an inner ring line, a stamped bone, one white tick. gap = earlier coins' discs [x, y, r]
+     (local) this one overlaps: a 1 px #fff3c4 line is kept between the two inks there (round 2: no black clot). */
+  const AU_BONE = '#a8651a';
+  function coin(c, r, a, ink, gap) {
+    const A = Math.max(.18, Math.abs(a)), sg = a < 0 ? -1 : 1, th = r * .26, iw = ink / 2;
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    const rx = r * A, dx = sg * th * Math.sqrt(1 - A * A); // the rim band, on the side turning away
+    const body = (g) => { c.beginPath(); c.ellipse(dx, 0, rx + g, r + g, 0, 0, 7); c.moveTo(rx + g, 0); c.ellipse(0, 0, rx + g, r + g, 0, 0, 7); c.rect(Math.min(0, dx), -r - g, Math.abs(dx), 2 * (r + g)); };
+    if (gap && gap.length) { c.save(); c.beginPath(); for (const q of gap) { c.moveTo(q[0] + q[2], q[1]); c.arc(q[0], q[1], q[2], 0, 7); } c.clip(); body(iw + 1.2); c.fillStyle = AU_RIM; c.fill(); c.restore(); }
+    body(iw); c.fillStyle = F2INK; c.fill();
+    body(-iw); c.fillStyle = AU_LO; c.fill();
+    c.beginPath(); c.ellipse(0, 0, Math.max(.5, rx - iw), r - iw, 0, 0, 7); c.fillStyle = AU; c.fill();
+    c.save(); c.scale(A, 1); // the face's marks, squashed with it (their line widths stay as drawn: the path is built scaled)
+    c.beginPath(); c.arc(0, 0, r * .68, 0, 7); c.restore(); c.lineWidth = Math.max(1.3, r * .09); c.strokeStyle = AU_LO; c.stroke();
+    // the bone: ~55 % of the coin's width at 30 deg, a 2 px #a8651a shaft, 4 round knobs ~3 px
+    const L = r * .55, nb = Math.max(1.5, r * .095), bone = () => { c.scale(A * sg, 1); c.rotate(-Math.PI / 6); };
+    c.save(); bone(); c.beginPath(); for (const sx of [-1, 1]) for (const sy of [-1, 1]) { c.moveTo(sx * (L - nb) + nb, sy * nb * .85); c.arc(sx * (L - nb), sy * nb * .85, nb, 0, 7); }
+    c.restore(); c.fillStyle = AU_BONE; c.fill();
+    c.save(); bone(); c.beginPath(); c.moveTo(-(L - nb), 0); c.lineTo(L - nb, 0); c.restore(); c.lineWidth = Math.max(2, r * .125); c.strokeStyle = AU_BONE; c.stroke();
+    if (A > .4) { c.save(); c.scale(A, 1); c.beginPath(); c.arc(0, 0, r * .84 - iw, Math.PI * 1.08, Math.PI * 1.36); c.restore();
+      c.lineWidth = Math.max(1.6, r * .12); c.strokeStyle = '#ffffff'; c.stroke(); } // the one white tick, top-left
+  }
+  /** The spin, steady steps of 2 frames (30 a s), the face's width 1 -> .75 -> .45 -> .18 -> .45 -> .75 -> 1 (the back face
+   *  < 0 after each thinnest step). ph0 = the start step. */
+  const COIN_W = [1, .75, .45, .18, .45, .75];
+  const coinA = (b, ph0) => { const j = ((Math.floor(b.age * 30 + 1e-6) + ph0) % 12 + 12) % 12; return COIN_W[j % 6] * (j % 6 > 3 ? -1 : 1) * (j >= 6 ? -1 : 1); };
+  /** The streak behind a coin: a solid #ffe58a wedge at 58 % (~1.5 coin widths long) with a 1 px #f6c84c core line. */
+  function coinStreak(c, b, r) {
+    c.save(); c.rotate(b.ang); c.globalAlpha = .58;
+    c.beginPath(); c.moveTo(-r * .2, -r * .55); c.lineTo(-r * 3.2, 0); c.lineTo(-r * .2, r * .55); c.closePath(); c.fillStyle = AU_HI; c.fill();
+    c.globalAlpha = 1; c.beginPath(); c.moveTo(-r * .2, 0); c.lineTo(-r * 3, 0); c.lineWidth = 1; c.strokeStyle = AU; c.stroke(); c.restore();
+  }
+  /** The drawn radius of a Spread coin: shots .62 x the hit circle (shrinking in their last 30 %, legacy's gems), EX coins .56 x,
+   *  growing from .35 to 1 over their first 10 frames. */
+  const coinR = (b) => { if (b.vk === 'cn') { const L = b.life || 1; return (b.pad || 25.7) * .62 * (b.age > L * .7 ? 1 - .45 * (b.age - L * .7) / (L * .3) : 1); }
+    return (b.pad || 53.5) * .56 * (.35 + .65 * Math.min(1, b.age / (10 / 60))); };
+  /** The TAB plate's Spread icon: a fan of 3 coins (plate space, the plate is 52 x 40 around 0,0, 'TAB' under y 8). */
+  function coinFan(c) {
+    for (const [x, y, r, a] of [[-9.5, -4, 7, .75], [9.5, -4, 7, -.75], [0, -6.5, 8.2, 1]]) { c.save(); c.translate(x, y); coin(c, r, a, 2.5); c.restore(); }
+  }
+  /* D96: where a Spread coin ends its range, a gold pop (legacy's red star, 02_story_menus.js:924, copied gold + inked) */
+  let popG = [];
+  function drawCoinPops(c) {
+    popG = popG.filter((p) => T - p.t0 >= 0 && T - p.t0 < .13);
+    for (const p of popG) { const k = Math.floor((T - p.t0) * 24 + 1e-6), R = [.11, .17, .1][Math.min(2, k)] * UN;
+      c.save(); c.translate(p.x, p.y); c.rotate(p.ang + k * .5); c.beginPath();
+      for (let i = 0; i < 18; i++) { const r = i % 2 ? R * .45 : R * (i % 4 ? 1 : 1.2), a = (i * Math.PI) / 9; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+      c.closePath(); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
+  }
+  /* D96: the Spread EX's launch sparkle: an inked white-gold twinkle + 8 inked gold ticks at the ring's start point, ~.2 s */
+  function coinLaunch(c) {
+    const seen = {};
+    for (const b of peaL) { if (b.vk !== 'cr' || b.age > .2 || !b.o) continue; const key = Math.round(b.o[0] / 8) + ',' + Math.round(b.o[1] / 8); if (seen[key]) continue; seen[key] = 1;
+      const t = b.age / .2, R = 34 * Math.sin(Math.min(1, t * 1.6) * Math.PI * .5) * (1 - t * .5);
+      c.save(); c.translate(b.o[0], b.o[1]); c.globalAlpha = t > .6 ? 1 - (t - .6) / .4 : 1; c.lineJoin = 'round'; c.lineCap = 'round';
+      c.rotate(t * .8); twinkle(c, R); c.fillStyle = AU_GLINT; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.stroke();
+      c.beginPath(); for (let i = 0; i < 8; i++) { const an = (i + .5) * Math.PI / 4; c.moveTo(Math.cos(an) * R * 1.1, Math.sin(an) * R * 1.1); c.lineTo(Math.cos(an) * R * 1.55, Math.sin(an) * R * 1.55); }
+      c.lineWidth = 8; c.strokeStyle = F2INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = AU; c.stroke(); c.restore(); }
+  }
+  /** The Spread coins in peaL, each with the earlier coins it overlaps (the gap line). */
+  function drawCoins(c) {
+    const prev = [];
+    for (const b of peaL) { if (b.vk !== 'cn' && b.vk !== 'cr') continue; const R = coinR(b), ink = b.vk === 'cr' ? 3 : 2.5;
+      const gap = prev.filter((q) => Math.hypot(q[0] - b.x, q[1] - b.y) < q[2] + R + ink + 1).map((q) => [q[0] - b.x, q[1] - b.y, q[2]]);
+      c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b, R, gap); c.restore(); prev.push([b.x, b.y, R + ink / 2]); }
+  }
   const F2DRAW = {
     pn: (c, b) => { // D96 Peashooter: a gold nugget, ~20 x 16 px at 1280 x 720 (its hit circle b.pad unchanged), a gold streak behind
       const p = b.pad || 5.35, hw = p * 2, hh = p * 1.5;
@@ -22757,6 +22833,12 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       if (cs >= .42) ingot(c, k, cs, INK); else ingotSide(c, k, 21 * k * .3, true, INK);
       c.restore();
       const t = (b.age * 2.5) % 1; if (t < .35) { c.save(); c.translate(-L * .15, -R * .3); c.rotate(t * 3); twinkle(c, R * .22 * Math.sin((t / .35) * Math.PI)); c.fillStyle = AU_GLINT; c.fill(); c.restore(); } },
+    cn: (c, b, R, gap) => { // D96 Spread: a gold coin, r = .62 x its hit circle b.pad (~30 px across at 1280 x 720), a random start step
+      const ph = Math.round((T - b.age) * 60) * 7 + Math.round(b.ang * 40); // its birth frame + its fan slot
+      coinStreak(c, b, R); coin(c, R, coinA(b, ph), 2.5, gap); },
+    cr: (c, b, R, gap) => { // D96 Spread EX: one of the ring's 8 gold coins, r = .56 x its hit circle (~56 px across); neighbours alternate face / thin
+      const i = (Math.round(b.ang / (Math.PI / 4)) % 8 + 8) % 8;
+      coinStreak(c, b, R); coin(c, R, coinA(b, i % 2 ? 3 : 0), 3, gap); },
     ch: (c, b) => { // Chaser: a little green spark with a short trail
       c.rotate(b.ang); c.lineCap = 'round';
       c.strokeStyle = 'rgba(150,240,120,.55)'; c.lineWidth = 6; c.beginPath(); c.moveTo(-26, 0); c.lineTo(-6, 0); c.stroke();
@@ -22914,7 +22996,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       c.restore();
     }
   }
-  const drawF2 = (c) => { for (const b of peaL) { c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
+  const drawF2 = (c) => { drawCoinPops(c); coinLaunch(c); drawMuzG(c); for (const b of peaL) { if (b.vk === 'cn' || b.vk === 'cr') continue; c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } drawCoins(c); for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
   /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
      Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
   const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
@@ -23168,16 +23250,20 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
 
   /* D96: Peashooter hits spark gold: the hit spark (legacy pDrawSpark, 02_story_menus.js:143, copied with a gold fill) and
      the EX burst's slivers (legacy exFxDraw 'burst', :234-238, copied gold; legacy skips it as k 'burstG') */
-  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi') ? 1 : 0);
+  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr') ? 1 : 0); // D96: Peashooter + Spread
   const goldBurst = (b) => { const e = fxL[fxL.length - 1]; if (goldOf(b) && e && e.k === 'burst') e.k = 'burstG'; };
   const pDrawSpark0 = pDrawSpark;
   pDrawSpark = function (c, s) {
     if (!s.gold || s.big) return pDrawSpark0(c, s);
     const k = Math.floor((T - s.t0) * 24 + 1e-6); if (k > 2) return;
-    const R = [20, 30, 16][k] * s.s, r = [9, 12, 7][k] * s.s, n = 6;
-    c.save(); c.translate(s.x, s.y); c.rotate(s.ang + k * .35); c.beginPath();
-    for (let i = 0; i < n * 2; i++) { const a = i * Math.PI / n, rr = i % 2 ? r : R * (i % 4 === 0 ? 1 : .7); c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
-    c.closePath(); c.fillStyle = AU; c.fill(); c.lineWidth = 4; c.lineJoin = 'round'; c.strokeStyle = INK; c.stroke(); c.restore();
+    // round 2 (art check): ~36 px across at 1280 x 720 (s 1), flat #f6c84c, a #ffe58a facet upper-left, a 4 px #fff3c4 centre dot, 2.5 px ink
+    const R = [17, 19.5, 15][k] * s.s, r = R * .45, n = 6;
+    c.save(); c.translate(s.x, s.y); const rot = s.ang + k * .35;
+    const path = () => { c.beginPath(); for (let i = 0; i < n * 2; i++) { const a = rot + i * Math.PI / n, rr = i % 2 ? r : R * (i % 4 === 0 ? 1 : .72); c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } c.closePath(); };
+    path(); c.fillStyle = AU; c.fill();
+    c.save(); path(); c.clip(); c.beginPath(); c.rect(-R * 1.3, -R * 1.3, R * 1.3, R * 1.3); c.fillStyle = AU_HI; c.fill(); c.restore();
+    path(); c.lineWidth = 2.5; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke();
+    c.beginPath(); c.arc(0, 0, 2.2, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore();
   };
   function drawGoldBursts(c) {
     for (const e of fxL) { if (e.k !== 'burstG') continue; const t = (T - e.t0) / e.life; if (t < 0 || t >= 1) continue;
@@ -23194,6 +23280,17 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
   /* D96 round 2: the Peashooter EX's muzzle star (legacy exFxDraw 'mstar', 02_story_menus.js:228-232, k 'mstarG') gold: #f6c84c rim,
      #ffe58a core, ink outline; its smoke cloud (legacy 'smoke', :218-223, k 'smokeG') cream #fff3c4. Copies with new colours. */
+  /* D96 round 2: the Spread's muzzle burst: the Peashooter EX's gold launch star at ~40 % (8 spikes, #f6c84c, #fff3c4 core,
+     2.5 px ink), 3 ticks at 24 fps, shrinking. Legacy's sprite muzzle (01_core.js muzzle(), the orange star drawn on the glove)
+     is skipped while the Spread is in hand (weapon 1); the other weapons keep it. */
+  let muzG = [];
+  { const muzzle0 = muzzle; muzzle = function (c, f) { if (weapon === 1) return; return muzzle0(c, f); }; }
+  function drawMuzG(c) {
+    muzG = muzG.filter((m) => T - m.t0 >= 0 && T - m.t0 < .125);
+    for (const m of muzG) { const k = Math.floor((T - m.t0) * 24 + 1e-6), R = .62 * UN * .4 * [1, .82, .58][Math.min(2, k)];
+      c.save(); c.translate(m.x, m.y); c.rotate(m.ang + k * .3); star(c, 8, R, R * .45); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke();
+      c.beginPath(); c.arc(0, 0, R * .3, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); }
+  }
   function drawGoldMuzzle(c, layer) {
     for (const e of fxL) {
       const age = T - e.t0, t = age / e.life, k = Math.floor(age * 24 + 1e-6); if (t < 0 || t >= 1) continue;
@@ -23208,7 +23305,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
         if (t < sp) { c.rotate(e.ang + (hrnd(k, 5) - .5) * .2);
           const st = (m) => { c.beginPath(); for (let i = 0; i < 32; i++) { const r = (i % 2 ? R * .42 : R * (.8 + .4 * hrnd(k, i))) * m, a = i * Math.PI / 16; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
           st(1); c.fillStyle = AU; c.fill(); c.lineWidth = 3; c.stroke(); st(.62); c.fillStyle = AU_HI; c.fill(); }
-        else { const u = (t - sp) / (1 - sp), ez = 1 - (1 - u) * (1 - u); c.rotate(e.ang); c.lineWidth = 2; c.fillStyle = AU;
+        else { const u = (t - sp) / (1 - sp), ez = 1 - (1 - u) * (1 - u); c.rotate(e.ang); c.lineWidth = 2.5; c.fillStyle = AU;
           if (u < .5) { c.beginPath(); c.arc(0, 0, .42 * R * (1 - u * 2), 0, 7); c.fillStyle = AU_HI; c.fill(); c.fillStyle = AU; }
           for (let i = 0; i < 16; i++) { const tipR = R * (.8 + .4 * hrnd(11, i)), r0 = .42 * R + FEEL.exSliverV * UN * (.7 + .6 * hrnd(23, i)) * ez, L = (tipR - .42 * R) * (1.2 - .9 * u), w = .42 * R * Math.sin(Math.PI / 16) * (1 - .6 * u);
             c.save(); c.rotate(i * Math.PI / 8); c.beginPath(); c.moveTo(r0, -w); c.lineTo(r0 + L, 0); c.lineTo(r0, w); c.closePath(); c.fill(); c.stroke(); c.restore(); } }
@@ -23245,7 +23342,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     tgtBreak: (e, f, batch) => tgtBreakFx(e, batch),
     shotGround: (e) => { const q = nearest(eShots, e.x, e.y); pf(e.x, PGY - 8, .5, .25, 0, shotCol(q, '#f6ecd0')); }, // eShots step :371
     shotWall: (e) => { const b = nearest(bulN(), e.x, e.y); sparkL.push({ x: e.x, y: e.y, t0: T, ang: (b ? b.ang : 0) + Math.PI, s: .7, gold: goldOf(b) }); pf(e.x, e.y, .5, .25, 0); }, // not legacy (Ruben 2026-10-17): a shot stops at a surface; legacy's hit spark + puff
-    gemPop: (e) => { const b = nearest(bulN(), e.x, e.y); popL.push({ x: e.x, y: e.y, t0: T, ang: b ? b.ang : 0 }); }, // :463
+    gemPop: (e) => { const b = nearest(bulN(), e.x, e.y); popG.push({ x: e.x, y: e.y, t0: T, ang: b ? b.ang : 0 }); }, // :463; D96: a gold pop (drawCoinPops)
     exCharge: (e) => {                                                                                   // pEx :248
       fxL.push({ k: 'charge', t0: T, life: .26, peb: Array.from({ length: 7 }, (_, i) => ({ sx: (i % 2 ? 1 : -1) * (.25 + Math.random() * .35) * UN, vx: (i % 2 ? 1 : -1) * (40 + Math.random() * 90), vy: -(110 + Math.random() * 170) })) }); },
     // an enemy shot ends: hit the dog (:460, .8 / .25) or a whole-screen clear (super :265, boss death 08_bosses :120, 1.1 / .3);
@@ -23297,7 +23394,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       pf(e.x, e.y, 1.7, .35, 0, pk ? '#f28ab8' : '#8a7fb0'); pf(e.x, PGY - 60, 1.2, .3, -.5, '#8a7fb0'); pf(e.x, PGY - 60, 1.2, .3, .5, '#8a7fb0'); },
     peelBurst: (e) => { pf(e.x, PGY - 150, 1.8, .5, 0); pf(e.x, PGY - 60, 1.4, .4, 0); },               // hanatoXformStep :103
     mirror: () => { const L = lvlL(), m = (o) => { if (o.x != null) o.x = L - o.x; if (o.vx != null) o.vx = -o.vx; if (o.ang != null) o.ang = Math.PI - o.ang; if (typeof o.d === 'number') o.d = -o.d; };
-      [puffL, fxL, flashL, sparkL, popL, debL, bugFall].forEach((l) => l.forEach(m)); },                  // cammyFlip :222 (bullets / shots: the port)
+      [puffL, fxL, flashL, sparkL, popL, popG, muzG, debL, bugFall].forEach((l) => l.forEach(m)); },                  // cammyFlip :222 (bullets / shots: the port)
     crateBreak: (e) => { const q = nearest(eShots, e.x, PGY - 40);                                      // ratCrateStep :250
       pf(e.x, PGY - 10, 1, .3, 0, shotCol(q, '#f6ecd0')); [-1, 1].forEach((d) => pf(e.x + d * 30, PGY - 8, .4, .3, d * .7)); },
   };
@@ -23341,8 +23438,9 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
 
   function shotFx(e, pl) {                                                                               // pSpawn :529-531
-    flashL.push({ x: e.x, y: e.y, t0: T, ang: e.ang, col: pl && pl.weapon ? '#ffd9df' : pl && pl.pea ? '#ffe9a0' : '#f4fffd' }); // D96: the Peashooter's flash gold
-    const au = pl && pl.pea && !pl.weapon; // D96 round 2: the Peashooter EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
+    if (pl && pl.weapon) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang }); // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG)
+    else flashL.push({ x: e.x, y: e.y, t0: T, ang: e.ang, col: pl && pl.pea ? '#ffe9a0' : '#f4fffd' }); // D96: the Peashooter's flash gold
+    const au = pl && (pl.pea || pl.weapon); // D96: the Peashooter / Spread EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
     if (e.ex) { fxL.push({ k: au ? 'mstarG' : 'mstar', t0: T, life: .27, x: e.x + Math.cos(e.ang) * .3 * UN, y: e.y + Math.sin(e.ang) * .3 * UN, ang: e.ang });
       if (!e.slot) { exSmoke(P.face); const q = fxL[fxL.length - 1]; if (au && q && q.k === 'smoke') q.k = 'smokeG'; } }
   }
