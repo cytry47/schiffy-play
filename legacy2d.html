@@ -22648,6 +22648,9 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     };
   }
   const clone = (v) => (v == null ? v : structuredClone(v));
+  /** The port's player bullets for legacy's draw. F2a: a Spread EX ball (sx) is drawn as a Spread gem (legacy has no ring
+   *  ball; an EX would draw as the big Peashooter comet). */
+  const bulOf = (l) => clone(l).map((b) => (b.sx ? { ...b, ex: 0, gem: 1 } : b));
   /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
      Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
   const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
@@ -23488,7 +23491,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       for (const k in s.gateOpen) if (!gateSeen[k]) { gateSeen[k] = 1; gateT[k] = s.T; }
       gateOpen = clone(s.gateOpen); popped = clone(s.popped); got = clone(s.got);
       petalT = s.petalT; petalGo = s.petalGo; T0 = s.introT;
-      bul = clone(s.bullets); eShots = clone(s.eShots);
+      bul = bulOf(s.bullets); eShots = clone(s.eShots);
       hits = s.hits; brk = s.brk; tgtHp = clone(s.tgtHp); tgtDead = clone(s.tgtDead);
       camPin = { x: s.cam.x, y: s.cam.y };
       if (!hold && !petalT) levelLook(Math.min(.1, Math.max(0, s.T - lookT)));   // sim seconds, so a slow frame does not run the chunks ahead
@@ -23593,7 +23596,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       if (s.id === 'boss7') hanatoSync(f);
       if (!hold) bossLook(f, dt);
       bossRun.end = s.end || null; bossRun.endT = s.endT;
-      bul = clone(s.bullets); eShots = clone(s.eShots);
+      bul = bulOf(s.bullets); eShots = clone(s.eShots);
       if (s.id === 'boss7') hanatoShots();
       const fired = firedAtkEvents(f), look = BOSS_LOOK[s.id];
       if (look && !hold) look(f, dt, fired, pr, s.players);
