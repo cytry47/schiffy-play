@@ -22650,7 +22650,37 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const clone = (v) => (v == null ? v : structuredClone(v));
   /** The port's player bullets for legacy's draw. F2a: a Spread EX ball (sx) is drawn as a Spread gem (legacy has no ring
    *  ball; an EX would draw as the big Peashooter comet). */
-  const bulOf = (l) => clone(l).map((b) => (b.sx ? { ...b, ex: 0, gem: 1 } : b));
+  const bulOf = (l) => { bulF2 = clone(l.filter((b) => b.vk)); return clone(l.filter((b) => !b.vk)).map((b) => (b.sx ? { ...b, ex: 0, gem: 1 } : b)); };
+  /* F2b (Cuphead Chaser / Lobber): those bullets (b.vk) are not legacy's; drawn here in world space after legacy's bullets
+     (exFxDraw layer 2), simple ink-outlined shapes in the rubber-hose style. Not legacy code. */
+  let bulF2 = [];
+  const F2INK = '#14100a';
+  const star = (c, n, r0, r1) => { c.beginPath(); for (let i = 0; i < n * 2; i++) { const r = i % 2 ? r1 : r0, a = -Math.PI / 2 + (i * Math.PI) / n; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
+  const F2DRAW = {
+    ch: (c, b) => { // Chaser: a little green spark with a short trail
+      c.rotate(b.ang); c.lineCap = 'round';
+      c.strokeStyle = 'rgba(150,240,120,.55)'; c.lineWidth = 6; c.beginPath(); c.moveTo(-26, 0); c.lineTo(-6, 0); c.stroke();
+      c.rotate(b.age * 14); star(c, 4, 11, 4.5); c.fillStyle = '#b8f58a'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
+      c.beginPath(); c.arc(0, 0, 2.6, 0, 7); c.fillStyle = '#f6ffe8'; c.fill(); },
+    cx: (c, b) => { // Chaser EX: a bigger golden-green star, spinning
+      c.rotate(b.age * 9); star(c, 5, 17, 7.5); c.fillStyle = '#e6f25a'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
+      star(c, 5, 8, 3.6); c.fillStyle = '#fbffd8'; c.fill(); },
+    lb: (c, b) => { // Lobber: a round purple blob, squashed a little along its flight
+      c.rotate(b.ang); const k = Math.min(.18, Math.hypot(b.vx, b.vy) / 9000); c.scale(1 + k, 1 - k);
+      c.beginPath(); c.arc(0, 0, 12, 0, 7); c.fillStyle = '#8a5bd6'; c.fill(); c.lineWidth = 3; c.strokeStyle = F2INK; c.stroke();
+      c.beginPath(); c.ellipse(-3, -4, 4.5, 3, -.5, 0, 7); c.fillStyle = '#d9c6ff'; c.fill(); },
+    lx: (c, b) => { // Lobber EX: a black bomb with a sparking fuse
+      c.rotate(b.age * 8);
+      c.beginPath(); c.arc(0, 0, 16, 0, 7); c.fillStyle = '#2b2440'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = F2INK; c.stroke();
+      c.beginPath(); c.ellipse(-5, -6, 5, 3.2, -.6, 0, 7); c.fillStyle = '#7d73a6'; c.fill();
+      c.lineWidth = 3; c.strokeStyle = '#c99a4a'; c.beginPath(); c.moveTo(0, -16); c.quadraticCurveTo(6, -24, 3, -29); c.stroke();
+      c.translate(3, -30); c.rotate(b.age * 30); star(c, 4, 7, 2.5); c.fillStyle = '#ffd34a'; c.fill(); },
+    le: (c, b) => { // the bomb's blast: a burst ring growing to its hit radius (b.pad), then fading
+      const t = Math.min(1, b.age / (b.life || .25)), R = (b.pad || 100) * (.55 + .45 * Math.sqrt(t)), a = 1 - t * t;
+      c.globalAlpha = a; star(c, 9, R, R * .72); c.fillStyle = '#ffcf4a'; c.fill(); c.lineWidth = 5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
+      star(c, 9, R * .62, R * .44); c.fillStyle = '#fff5c8'; c.fill(); c.globalAlpha = 1; },
+  };
+  const drawF2 = (c) => { for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } };
   /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
      Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
   const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
@@ -22781,7 +22811,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
   bossDraw = function (c) { bossDraw0(c); if (p2) drawP2(c); if (zonesOv) drawZones(c, zonesOv); };
   const exFx0 = exFxDraw;   // levels have no bossDraw: player 2 goes in right before player 1's EX layer 0 (pDraw :916)
-  exFxDraw = function (c, layer) { if (layer === 0 && !bossRun && p2) drawP2(c); exFx0(c, layer); if (layer === 1 && bossRun && mkPh && bossId === 'boss4') drawPh(c, mkPh.filter(mkStone)); };
+  exFxDraw = function (c, layer) { if (layer === 0 && !bossRun && p2) drawP2(c); exFx0(c, layer); if (layer === 2) drawF2(c); if (layer === 1 && bossRun && mkPh && bossId === 'boss4') drawPh(c, mkPh.filter(mkStone)); };
   petalDone = function () {};   // the port runs the story (legacy pFrame calls this 1.8 s after the petal)
   /* the fight title follows the phase (bossRun.name = the port's title, set in boss()); legacy's Cammy title is a fixed
      'Cammyyy <emote> Initiator', so its name line is drawn as plain text like every other boss */
