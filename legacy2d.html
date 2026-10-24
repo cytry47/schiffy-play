@@ -22644,6 +22644,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
          nugget while the Peashooter is in hand; other weapons' icons as before */
       const di = c.drawImage;
       if (hud1 && hud1.pea) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); nugget(this, 10.5, 7.5, 0, 2); this.restore(); return; } return di.call(this, im, ...a); };
+      else if (hud1 && hud1.cha) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); boneIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Chaser's = a gold bone
       /* D96 Spread: legacy's 3 gem icons (drawImage(gemTex, -9, -6, 20, 15) under translate(g) rotate(g2), :186) are one fan
          of 3 gold coins: drawn on the first gem (its translate / rotate undone), the other two skipped */
       let gi = 0; const di2 = c.drawImage;
@@ -22807,6 +22808,104 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       const gap = prev.filter((q) => Math.hypot(q[0] - b.x, q[1] - b.y) < q[2] + R + ink + 1).map((q) => [q[0] - b.x, q[1] - b.y, q[2]]);
       c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b, R, gap); c.restore(); prev.push([b.x, b.y, R + ink / 2]); }
   }
+  /* D96 Chaser: a gold chew-bone. Shot (vk 'ch') and EX (vk 'cx') stay in bulF2 (drawn by drawBones, not F2DRAW). The bone lies
+     along its local x: a shaft 2 (L - r) long, w half thick, and 2 round knobs r at each end (centres +-(L - r), +-kr). Built in
+     world space (P), so the earlier bones' silhouettes can be one clip (the cream gap) and the light stays screen top. */
+  // shot ~22 x 12 px; EX round 2: ~44 x 26 px, the shaft ~9 px of gold (~40 % of its height), 3 px ink, a cream rim on top (as the coins)
+  const BONE_S = { L: 11, r: 3.4, kr: 2.5, w: 2.1, ink: 2.2 }, BONE_X = { L: 22, r: 6.6, kr: 5, w: 6, ink: 3.2, rim: 1 };
+  function bonePath(c, x, y, rot, d, k, g) {
+    const ca = Math.cos(rot), sa = Math.sin(rot), P = (u, v) => [x + (u * ca - v * sa) * k, y + (u * sa + v * ca) * k];
+    const a = d.L - d.r, w = d.w * k + g;
+    const q = [[-a, -1], [a, -1], [a, 1], [-a, 1]].map(([u, s]) => { const p = P(u, 0); return [p[0] - sa * s * w, p[1] + ca * s * w]; });
+    c.moveTo(q[0][0], q[0][1]); for (let i = 1; i < 4; i++) c.lineTo(q[i][0], q[i][1]); c.closePath(); // clockwise like arc()
+    for (const u of [-a, a]) for (const v of [-d.kr, d.kr]) { const p = P(u, v); c.moveTo(p[0] + d.r * k + g, p[1]); c.arc(p[0], p[1], d.r * k + g, 0, 7); }
+  }
+  /** One bone at x, y turned rot, scale k. gap = earlier bones [x, y, rot, d, k] it touches: a 1.2 px #fff3c4 line between the inks. */
+  function bone(c, x, y, rot, d, k, gap) {
+    const iw = d.ink / 2, R = (d.L + 2) * k;
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    if (gap && gap.length) { c.save(); c.beginPath(); for (const q of gap) bonePath(c, q[0], q[1], q[2], q[3], q[4], q[3].ink / 2); c.clip();
+      c.beginPath(); bonePath(c, x, y, rot, d, k, iw + 1.2); c.fillStyle = AU_RIM; c.fill(); c.restore(); }
+    c.beginPath(); bonePath(c, x, y, rot, d, k, iw); c.fillStyle = F2INK; c.fill();
+    const g = c.createLinearGradient(x, y - R * .55, x, y + R * .55); // screen-up light: #ffe58a top -> #f6c84c -> a touch of #d6952a low
+    g.addColorStop(0, AU_HI); g.addColorStop(.5, AU); g.addColorStop(1, '#e9ae3c');
+    c.beginPath(); bonePath(c, x, y, rot, d, k, -iw); c.fillStyle = g; c.fill();
+    if (d.rim) { // round 2: the coins' cream rim, a ~1.3 px #fff3c4 line inside the ink on the screen-top half of the outline
+      c.save(); c.beginPath(); bonePath(c, x, y, rot, d, k, -iw); c.clip(); c.beginPath(); c.rect(x - R * 2, y - R * 2, R * 4, R * 2 - d.w * k * .2); c.clip();
+      c.beginPath(); bonePath(c, x, y, rot, d, k, -iw); c.lineWidth = 2.6; c.strokeStyle = AU_RIM; c.stroke(); c.restore(); }
+    // the cream highlight: a line along the shaft's upper side + a dot on each end's upper knob, one white glint
+    const ca = Math.cos(rot), sa = Math.sin(rot), s = ca >= 0 ? -1 : 1, P = (u, v) => [x + (u * ca - v * sa) * k, y + (u * sa + v * ca) * k];
+    const a = (d.L - d.r) * .55, h0 = P(-a, s * d.w * .35), h1 = P(a, s * d.w * .35);
+    c.beginPath(); c.moveTo(h0[0], h0[1]); c.lineTo(h1[0], h1[1]); c.lineWidth = Math.max(1.2, d.w * k * (d.rim ? .3 : .55)); c.strokeStyle = AU_RIM; c.stroke();
+    const kn = [P(-(d.L - d.r), s * d.kr), P(d.L - d.r, s * d.kr)].sort((p, q) => p[0] - q[0]);
+    kn.forEach((p, i) => { c.beginPath(); c.arc(p[0] - d.r * k * .25, p[1] - d.r * k * .3, Math.max(1, d.r * k * (i ? .3 : .38)), 0, 7); c.fillStyle = i ? AU_RIM : '#ffffff'; c.fill(); });
+  }
+  /* The bones' recent drawn path (look only): a key per bullet (owner, kind, birth frame, orbit slot) -> its last points, so the
+     trail follows the homing curve. Sampled once per drawn T (~4-5 frames kept); a rewound T drops the later points. */
+  const boneHist = new Map(); let boneT = -1;
+  const boneKey = (b) => b.owner + b.vk + Math.round((T - b.age) * 60) + '|' + (b.so == null ? '' : b.so.toFixed(2));
+  /** Round 2 trail: an opaque tapering wedge along the path, W px wide at the bone -> 0 over Lm px (shot 6 / 50, EX 9 / 75): a
+   *  #f6c84c edge, a #ffe58a core, a #fff3c4 centre line over its first 60 %; at most 2 cream 4-point twinkles (~10 px, 1 px ink). */
+  function boneTrail(c, pts, z) {
+    if (pts.length < 2) return;
+    const W = 3 * z, Lm = 50 * z, P = [[pts[pts.length - 1][0], pts[pts.length - 1][1], 0]];
+    for (let i = pts.length - 2; i >= 0; i--) { const q = P[P.length - 1], dx = pts[i][0] - q[0], dy = pts[i][1] - q[1], l = Math.hypot(dx, dy); if (l < .01) continue;
+      if (q[2] + l >= Lm) { const f = (Lm - q[2]) / l; P.push([q[0] + dx * f, q[1] + dy * f, Lm]); break; } P.push([pts[i][0], pts[i][1], q[2] + l]); }
+    if (P.length < 2) return;
+    const Lt = P[P.length - 1][2];
+    const side = (m) => { const L = [], Rr = [];
+      for (let i = 0; i < P.length; i++) { const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1;
+        const hw = W * m * (1 - P[i][2] / Lt), nx = -dy / l * Math.max(0, hw), ny = dx / l * Math.max(0, hw);
+        L.push([P[i][0] + nx, P[i][1] + ny]); Rr.push([P[i][0] - nx, P[i][1] - ny]); }
+      c.beginPath(); L.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); for (let i = Rr.length - 1; i >= 0; i--) c.lineTo(Rr[i][0], Rr[i][1]); c.closePath(); };
+    c.save(); c.globalAlpha = .9; side(1); c.fillStyle = AU; c.fill(); c.globalAlpha = .95; side(.62); c.fillStyle = AU_HI; c.fill();
+    c.globalAlpha = 1; c.beginPath(); c.moveTo(P[0][0], P[0][1]);
+    for (let i = 1; i < P.length; i++) { if (P[i - 1][2] >= Lt * .6) break; const f = Math.min(1, (Lt * .6 - P[i - 1][2]) / Math.max(.01, P[i][2] - P[i - 1][2]));
+      c.lineTo(P[i - 1][0] + (P[i][0] - P[i - 1][0]) * f, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * f); }
+    c.lineWidth = 1.3 * Math.min(1.4, z); c.lineCap = 'round'; c.strokeStyle = AU_RIM; c.stroke(); c.restore();
+    let n = 0; // twinkles: left at the points of every 3rd frame, the newest 2 points skipped, at most 2
+    for (let i = pts.length - 3; i >= 0 && n < 2; i--) { const p = pts[i], f = Math.round(p[2] * 60); if (f % 3) continue; n++;
+      const u = Math.min(1, (T - p[2]) / .1), r = 6 * Math.min(1.3, z) * (1 - u * .35);
+      c.save(); c.translate(p[0], p[1]); c.rotate(f * .5); star(c, 4, r, r * .45); c.fillStyle = AU_RIM; c.fill(); c.lineWidth = 1; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
+  }
+  /** The EX's launch sparkle (as coinLaunch): an inked white-gold twinkle + 4 gold ticks at the EX point, ~.2 s. */
+  function boneLaunch(c) {
+    const seen = {};
+    for (const b of bulF2) { if (b.vk !== 'cx' || b.age > .2 || b.ox0 == null) continue; const key = Math.round(b.ox0 / 8) + ',' + Math.round(b.oy0 / 8); if (seen[key]) continue; seen[key] = 1;
+      const t = b.age / .2, R = 26 * (.45 + .55 * Math.sin(Math.min(1, t * 1.6) * Math.PI * .5)) * (1 - t * .5), lw = Math.max(2.5, R * .26);
+      c.save(); c.translate(b.ox0, b.oy0); c.globalAlpha = t > .6 ? 1 - (t - .6) / .4 : 1; c.lineJoin = 'round'; c.lineCap = 'round';
+      c.rotate(t * .8); twinkle(c, R); c.fillStyle = AU_GLINT; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.stroke();
+      c.beginPath(); for (let i = 0; i < 4; i++) { const an = (i + .5) * Math.PI / 2; c.moveTo(Math.cos(an) * R * 1.1, Math.sin(an) * R * 1.1); c.lineTo(Math.cos(an) * R * 1.6, Math.sin(an) * R * 1.6); }
+      c.lineWidth = lw; c.strokeStyle = F2INK; c.stroke(); c.lineWidth = lw * .45; c.strokeStyle = AU; c.stroke(); c.restore(); }
+  }
+  /** Round 2 (draw only, the sim's points untouched): an EX bone is drawn pushed out along its launch direction ld by up to 45 px,
+   *  easing back onto its sim point over its first .3 s, so the 4 fresh bones sit apart on a ring clear of the burst's spikes. */
+  const BONE_PUSH = 45, BONE_PUSH_T = .3;
+  const boneAt = (b) => { if (b.vk !== 'cx' || b.ld == null || b.age >= BONE_PUSH_T) return [b.x, b.y];
+    const u = b.age / BONE_PUSH_T, o = BONE_PUSH * (1 - u) * (1 - u); return [b.x + Math.cos(b.ld) * o, b.y + Math.sin(b.ld) * o]; };
+  /** The Chaser's bones: shots along their flight; EX bones scale in (.55 -> 1 over 10 frames, the ink with them), start tangent to
+   *  their launch ring and spin about their centre on the orbit (11.25 deg every frame), then fly along their flight once launched
+   *  (no spin). Each with its trail. */
+  function drawBones(c) {
+    const fresh = T !== boneT, live = new Set(); boneT = T;
+    const L = bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx');
+    for (const b of L) { const key = boneKey(b); live.add(key); let h = boneHist.get(key); if (!h) boneHist.set(key, (h = []));
+      const at = boneAt(b); b.dx = at[0]; b.dy = at[1];
+      while (h.length && h[h.length - 1][2] > T + 1e-6) h.pop();
+      if (fresh || !h.length) h.push([b.dx, b.dy, T]); else h[h.length - 1] = [b.dx, b.dy, T];
+      while (h.length && T - h[0][2] > (b.vk === 'cx' ? .084 : .067)) h.shift(); b.hk = key; }
+    for (const k of boneHist.keys()) if (!live.has(k)) boneHist.delete(k);
+    for (const b of L) boneTrail(c, boneHist.get(b.hk) || [], b.vk === 'cx' ? 1.5 : 1);
+    const prev = [];
+    for (const b of L) { const ex = b.vk === 'cx', d = ex ? BONE_X : BONE_S;
+      const k = ex ? .55 + .45 * Math.min(1, b.age / (10 / 60)) : 1;
+      const rot = ex && b.sw ? (b.ld ?? b.so) + Math.PI / 2 + Math.floor(b.age * 60 + 1e-6) * Math.PI / 16 : b.ang;
+      const R = (d.L + d.ink) * k, gap = prev.filter((q) => Math.hypot(q[0] - b.dx, q[1] - b.dy) < q[5] + R);
+      const dk = k < 1 ? { ...d, ink: Math.max(1.6, d.ink * k) } : d;
+      bone(c, b.dx, b.dy, rot, dk, k, gap); prev.push([b.dx, b.dy, rot, dk, k, R]); }
+  }
+  /** The TAB plate's Chaser icon: one gold bone tilted 25 deg (plate space, as hud.ts BONE). */
+  const boneIcon = (c) => bone(c, 0, 0, -.44, { L: 14, r: 4.2, kr: 3.2, w: 2.6, ink: 2.5 }, 1, null);
   const F2DRAW = {
     pn: (c, b) => { // D96 Peashooter: a gold nugget, ~20 x 16 px at 1280 x 720 (its hit circle b.pad unchanged), a gold streak behind
       const p = b.pad || 5.35, hw = p * 2, hh = p * 1.5;
@@ -22839,14 +22938,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     cr: (c, b, R, gap) => { // D96 Spread EX: one of the ring's 8 gold coins, r = .56 x its hit circle (~56 px across); neighbours alternate face / thin
       const i = (Math.round(b.ang / (Math.PI / 4)) % 8 + 8) % 8;
       coinStreak(c, b, R); coin(c, R, coinA(b, i % 2 ? 3 : 0), 3, gap); },
-    ch: (c, b) => { // Chaser: a little green spark with a short trail
-      c.rotate(b.ang); c.lineCap = 'round';
-      c.strokeStyle = 'rgba(150,240,120,.55)'; c.lineWidth = 6; c.beginPath(); c.moveTo(-26, 0); c.lineTo(-6, 0); c.stroke();
-      c.rotate(b.age * 14); star(c, 4, 11, 4.5); c.fillStyle = '#b8f58a'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
-      c.beginPath(); c.arc(0, 0, 2.6, 0, 7); c.fillStyle = '#f6ffe8'; c.fill(); },
-    cx: (c, b) => { // Chaser EX: a bigger golden-green star, spinning
-      c.rotate(b.age * 9); star(c, 5, 17, 7.5); c.fillStyle = '#e6f25a'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
-      star(c, 5, 8, 3.6); c.fillStyle = '#fbffd8'; c.fill(); },
+    // ch / cx (Chaser shot / EX): D96 gold bones, drawBones above
     lb: (c, b) => { // Lobber: a round purple blob, squashed a little along its flight; F2d: drawn at its hit radius (b.pad)
       c.rotate(b.ang); const k = Math.min(.18, Math.hypot(b.vx, b.vy) / 9000); c.scale(1 + k, 1 - k);
       const z = (b.pad || 12) / 12; c.scale(z, z);
@@ -22996,7 +23088,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       c.restore();
     }
   }
-  const drawF2 = (c) => { drawCoinPops(c); coinLaunch(c); drawMuzG(c); for (const b of peaL) { if (b.vk === 'cn' || b.vk === 'cr') continue; c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } drawCoins(c); for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
+  const drawF2 = (c) => { drawCoinPops(c); coinLaunch(c); boneLaunch(c); drawMuzG(c, 0); for (const b of peaL) { if (b.vk === 'cn' || b.vk === 'cr') continue; c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } drawCoins(c); drawBones(c); drawMuzG(c, 1); for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
   /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
      Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
   const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
@@ -23244,13 +23336,15 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   // legacy per-player globals the port keeps on its player (src/sim/player.ts "legacy globals, now per player")
   function playerGlobals(pl) {
     jb = pl.jb; db = pl.db; exb = pl.exb; sb = pl.sb; ib = pl.ib;
-    mtr = pl.mtr; weapon = pl.weapon; shotN = pl.shotN; parries = pl.parries;
+    mtr = pl.mtr; weapon = pl.weapon; shotN = pl.shotN; parries = pl.parries; chW = pl.cha ? 1 : 0;
     fireNow = 0; // bullets come from the port (legacy would spawn its own in pFrame)
   }
 
   /* D96: Peashooter hits spark gold: the hit spark (legacy pDrawSpark, 02_story_menus.js:143, copied with a gold fill) and
      the EX burst's slivers (legacy exFxDraw 'burst', :234-238, copied gold; legacy skips it as k 'burstG') */
-  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr') ? 1 : 0); // D96: Peashooter + Spread
+  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr' || b.vk === 'ch' || b.vk === 'cx') ? 1 : 0); // D96: Peashooter + Spread + Chaser
+  /** D96: the hit lookups also see the Chaser's bones (bulF2 'ch' / 'cx'), so their hits spark gold */
+  const bulA = () => bulN().concat(bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx'));
   const goldBurst = (b) => { const e = fxL[fxL.length - 1]; if (goldOf(b) && e && e.k === 'burst') e.k = 'burstG'; };
   const pDrawSpark0 = pDrawSpark;
   pDrawSpark = function (c, s) {
@@ -23284,10 +23378,17 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
      2.5 px ink), 3 ticks at 24 fps, shrinking. Legacy's sprite muzzle (01_core.js muzzle(), the orange star drawn on the glove)
      is skipped while the Spread is in hand (weapon 1); the other weapons keep it. */
   let muzG = [];
-  { const muzzle0 = muzzle; muzzle = function (c, f) { if (weapon === 1) return; return muzzle0(c, f); }; }
-  function drawMuzG(c) {
+  let chW = 0; // D96: the Chaser in hand (playerGlobals): its muzzle is the gold burst too, legacy's sprite muzzle skipped
+  { const muzzle0 = muzzle; muzzle = function (c, f) { if (weapon === 1 || chW) return; return muzzle0(c, f); }; }
+  /* D96 Chaser round 2: its muzzle star (m.ch) is drawn over the bones (drawF2), 6 fat spikes, the whole star fading out ink and
+     all (alpha 1 / .7 / .4, size 1 / .92 / .84): no ink ring left round a shrinking fill */
+  function drawMuzG(c, ch) {
     muzG = muzG.filter((m) => T - m.t0 >= 0 && T - m.t0 < .125);
-    for (const m of muzG) { const k = Math.floor((T - m.t0) * 24 + 1e-6), R = .62 * UN * .4 * [1, .82, .58][Math.min(2, k)];
+    for (const m of muzG) { if (!!m.ch !== !!ch) continue;
+      if (m.ch) { const k = Math.min(2, Math.floor((T - m.t0) * 24 + 1e-6)), R = .62 * UN * .4 * .6 * [1, .92, .84][k];
+        c.save(); c.translate(m.x, m.y); c.rotate(m.ang + k * .3); c.globalAlpha = [1, .7, .4][k]; star(c, 6, R, R * .55); c.fillStyle = AU; c.fill();
+        c.lineWidth = 2; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke(); c.beginPath(); c.arc(0, 0, R * .32, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); continue; }
+      const k = Math.floor((T - m.t0) * 24 + 1e-6), R = .62 * UN * .4 * [1, .82, .58][Math.min(2, k)];
       c.save(); c.translate(m.x, m.y); c.rotate(m.ang + k * .3); star(c, 8, R, R * .45); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke();
       c.beginPath(); c.arc(0, 0, R * .3, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); }
   }
@@ -23341,7 +23442,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     tgtHitEx: (e) => tgtHitFx(e, 1),
     tgtBreak: (e, f, batch) => tgtBreakFx(e, batch),
     shotGround: (e) => { const q = nearest(eShots, e.x, e.y); pf(e.x, PGY - 8, .5, .25, 0, shotCol(q, '#f6ecd0')); }, // eShots step :371
-    shotWall: (e) => { const b = nearest(bulN(), e.x, e.y); sparkL.push({ x: e.x, y: e.y, t0: T, ang: (b ? b.ang : 0) + Math.PI, s: .7, gold: goldOf(b) }); pf(e.x, e.y, .5, .25, 0); }, // not legacy (Ruben 2026-10-17): a shot stops at a surface; legacy's hit spark + puff
+    shotWall: (e) => { const b = nearest(bulA(), e.x, e.y); sparkL.push({ x: e.x, y: e.y, t0: T, ang: (b ? b.ang : 0) + Math.PI, s: .7, gold: goldOf(b) }); pf(e.x, e.y, .5, .25, 0); }, // not legacy (Ruben 2026-10-17): a shot stops at a surface; legacy's hit spark + puff
     gemPop: (e) => { const b = nearest(bulN(), e.x, e.y); popG.push({ x: e.x, y: e.y, t0: T, ang: b ? b.ang : 0 }); }, // :463; D96: a gold pop (drawCoinPops)
     exCharge: (e) => {                                                                                   // pEx :248
       fxL.push({ k: 'charge', t0: T, life: .26, peb: Array.from({ length: 7 }, (_, i) => ({ sx: (i % 2 ? 1 : -1) * (.25 + Math.random() * .35) * UN, vx: (i % 2 ? 1 : -1) * (40 + Math.random() * 90), vy: -(110 + Math.random() * 170) })) }); },
@@ -23394,7 +23495,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       pf(e.x, e.y, 1.7, .35, 0, pk ? '#f28ab8' : '#8a7fb0'); pf(e.x, PGY - 60, 1.2, .3, -.5, '#8a7fb0'); pf(e.x, PGY - 60, 1.2, .3, .5, '#8a7fb0'); },
     peelBurst: (e) => { pf(e.x, PGY - 150, 1.8, .5, 0); pf(e.x, PGY - 60, 1.4, .4, 0); },               // hanatoXformStep :103
     mirror: () => { const L = lvlL(), m = (o) => { if (o.x != null) o.x = L - o.x; if (o.vx != null) o.vx = -o.vx; if (o.ang != null) o.ang = Math.PI - o.ang; if (typeof o.d === 'number') o.d = -o.d; };
-      [puffL, fxL, flashL, sparkL, popL, popG, muzG, debL, bugFall].forEach((l) => l.forEach(m)); },                  // cammyFlip :222 (bullets / shots: the port)
+      [puffL, fxL, flashL, sparkL, popL, popG, muzG, debL, bugFall].forEach((l) => l.forEach(m)); boneHist.clear(); },                  // cammyFlip :222 (bullets / shots: the port)
     crateBreak: (e) => { const q = nearest(eShots, e.x, PGY - 40);                                      // ratCrateStep :250
       pf(e.x, PGY - 10, 1, .3, 0, shotCol(q, '#f6ecd0')); [-1, 1].forEach((d) => pf(e.x + d * 30, PGY - 8, .4, .3, d * .7)); },
   };
@@ -23407,7 +23508,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
   function tgtHitFx(e, ex) {                                                                             // pTgtHit 02_story_menus :127-131
     const g = dummyAt(e.x, 0); if (!g) return;
-    const b = nearest(bulN(), e.x, e.y), ang = b ? b.ang : 0, off = tgtOffAt[Math.round(g.x)] || 0;
+    const b = nearest(bulA(), e.x, e.y), ang = b ? b.ang : 0, off = tgtOffAt[Math.round(g.x)] || 0;
     tgtHit[g.id] = .25; if (ex) { exBurst(e.x, e.y, ang); goldBurst(b); tgtPale[g.id] = T; }
     const dd = b ? Math.hypot(e.x - g.x, e.y - Math.max(PGY - HB.targetCy - off, Math.min(PGY - HB.targetLow - off, e.y))) : 0;
     const k = Math.min(dd, 52) / (dd || 1);
@@ -23432,15 +23533,15 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
 
   function bossHitFx(e, ex) {                                                                            // bossDamage 08_bosses :127-129
-    const b = nearest(bulN(), e.x, e.y), ang = b ? b.ang : Math.PI;
+    const b = nearest(bulA(), e.x, e.y), ang = b ? b.ang : Math.PI;
     if (ex) { exBurst(e.x, e.y, ang); goldBurst(b); bossRun.fight.pale = T; }
     sparkL.push({ x: e.x, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b) });
   }
 
   function shotFx(e, pl) {                                                                               // pSpawn :529-531
-    if (pl && pl.weapon) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang }); // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG)
+    if (pl && (pl.weapon || pl.cha)) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang, ch: pl.cha ? 1 : 0 }); // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG); the Chaser's at 60 %
     else flashL.push({ x: e.x, y: e.y, t0: T, ang: e.ang, col: pl && pl.pea ? '#ffe9a0' : '#f4fffd' }); // D96: the Peashooter's flash gold
-    const au = pl && (pl.pea || pl.weapon); // D96: the Peashooter / Spread EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
+    const au = pl && (pl.pea || pl.weapon || pl.cha); // D96: the Peashooter / Spread / Chaser EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
     if (e.ex) { fxL.push({ k: au ? 'mstarG' : 'mstar', t0: T, life: .27, x: e.x + Math.cos(e.ang) * .3 * UN, y: e.y + Math.sin(e.ang) * .3 * UN, ang: e.ang });
       if (!e.slot) { exSmoke(P.face); const q = fxL[fxL.length - 1]; if (au && q && q.k === 'smoke') q.k = 'smokeG'; } }
   }
@@ -23954,7 +24055,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = hold ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, null, s.players, s.frame);
       Object.assign(P, clone(s.pl));
-      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       stReal = null;
       for (const k in s.gateOpen) if (!gateSeen[k]) { gateSeen[k] = 1; gateT[k] = s.T; }
@@ -24041,7 +24142,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = s.FRZ > 0 ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, f, s.players, s.frame);
       Object.assign(P, clone(s.pl));
-      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       // YOU DIED: legacy shows it (pDraw :937, pDrawBossUI :224) once its one dog has been dead .5 s; the port opens the
       // menu only when every player is dead. Until then the dog's death timer is held for those checks (the ghost keeps the real one)
