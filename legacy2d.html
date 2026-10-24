@@ -22650,7 +22650,13 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const clone = (v) => (v == null ? v : structuredClone(v));
   /** The port's player bullets for legacy's draw. F2a: a Spread EX ball (sx) is drawn as a Spread gem (legacy has no ring
    *  ball; an EX would draw as the big Peashooter comet). */
-  const bulOf = (l) => { bulF2 = clone(l.filter((b) => b.vk)); return clone(l.filter((b) => !b.vk)).map((b) => (b.sx ? { ...b, ex: 0, gem: 1 } : b)); };
+  /* F3 (item 0): legacy draws the Peashooter EX comet's head at the bullet point, but its hit circle sits b.off ahead (Cuphead's
+     sprite and collider line up): the comet is drawn at the hit centre (the sim's hitAt), the hit data is untouched. */
+  const atHit = (b) => { if (!b.ex || !b.off || b.sx) return b; const c = Math.cos(b.ang), n = Math.sin(b.ang), o = b.off; return { ...b, x: b.x + c * o[0] + n * o[1], y: b.y + n * o[0] - c * o[1] }; };
+  const bulOf = (l) => { bulF2 = clone(l.filter((b) => b.vk)); return clone(l.filter((b) => !b.vk)).map((b) => (b.sx ? { ...b, ex: 0, gem: 1 } : atHit(b))); };
+  /** F3: legacy's enemy shots without the Giant Ghost's hearts (drawn by the F3 layer); the hearts kept for it. */
+  let hearts = [];
+  const eshOf = (l) => { hearts = clone(l.filter((e) => e.sgh)); return clone(l.filter((e) => !e.sgh)); };
   /* F2b (Cuphead Chaser / Lobber): those bullets (b.vk) are not legacy's; drawn here in world space after legacy's bullets
      (exFxDraw layer 2), simple ink-outlined shapes in the rubber-hose style. Not legacy code. */
   let bulF2 = [];
@@ -22665,12 +22671,13 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     cx: (c, b) => { // Chaser EX: a bigger golden-green star, spinning
       c.rotate(b.age * 9); star(c, 5, 17, 7.5); c.fillStyle = '#e6f25a'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
       star(c, 5, 8, 3.6); c.fillStyle = '#fbffd8'; c.fill(); },
-    lb: (c, b) => { // Lobber: a round purple blob, squashed a little along its flight
+    lb: (c, b) => { // Lobber: a round purple blob, squashed a little along its flight; F2d: drawn at its hit radius (b.pad)
       c.rotate(b.ang); const k = Math.min(.18, Math.hypot(b.vx, b.vy) / 9000); c.scale(1 + k, 1 - k);
+      const z = (b.pad || 12) / 12; c.scale(z, z);
       c.beginPath(); c.arc(0, 0, 12, 0, 7); c.fillStyle = '#8a5bd6'; c.fill(); c.lineWidth = 3; c.strokeStyle = F2INK; c.stroke();
       c.beginPath(); c.ellipse(-3, -4, 4.5, 3, -.5, 0, 7); c.fillStyle = '#d9c6ff'; c.fill(); },
-    lx: (c, b) => { // Lobber EX: a black bomb with a sparking fuse
-      c.rotate(b.age * 8);
+    lx: (c, b) => { // Lobber EX: a black bomb with a sparking fuse; F2d: the ball drawn at its hit radius (b.pad)
+      c.rotate(b.age * 8); const z = (b.pad || 16) / 16; c.scale(z, z);
       c.beginPath(); c.arc(0, 0, 16, 0, 7); c.fillStyle = '#2b2440'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = F2INK; c.stroke();
       c.beginPath(); c.ellipse(-5, -6, 5, 3.2, -.6, 0, 7); c.fillStyle = '#7d73a6'; c.fill();
       c.lineWidth = 3; c.strokeStyle = '#c99a4a'; c.beginPath(); c.moveTo(0, -16); c.quadraticCurveTo(6, -24, 3, -29); c.stroke();
@@ -22692,15 +22699,102 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       c.beginPath(); c.arc(0, 0, 21, 0, 7); c.fillStyle = '#3f8cf2'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = F2INK; c.stroke();
       c.beginPath(); c.arc(3, -2, 12, 0, 7); c.fillStyle = '#bfe1ff'; c.fill();
       c.beginPath(); c.arc(5, -4, 5, 0, 7); c.fillStyle = '#ffffff'; c.fill(); },
-    qe: (c, b) => { // Charge EX: a big blue star burst growing to its hit radius (b.pad), then fading
+    qe: (c, b) => { // Charge EX: a big blue star burst growing to its hit radius (b.pad), then fading; F2d: round its hit centre (b.off)
+      if (b.off) c.translate(Math.cos(b.ang) * b.off[0], Math.sin(b.ang) * b.off[0]);
       const t = Math.min(1, b.age / (b.life || .25)), R = (b.pad || 100) * (.6 + .4 * Math.sqrt(t)), a = 1 - t * t;
       c.globalAlpha = a; c.rotate(t * .5); star(c, 7, R, R * .62); c.fillStyle = '#4f9cff'; c.fill(); c.lineWidth = 5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
       star(c, 7, R * .6, R * .38); c.fillStyle = '#d6ecff'; c.fill(); c.globalAlpha = 1; },
     rb: (c, b) => { // Roundabout: a spinning yellow boomerang
-      c.rotate(b.age * 16); boomer(c, 22, '#f5c43a'); },
+      c.rotate(b.age * 16); boomer(c, b.pad || 22, '#f5c43a'); }, // F2d: arm reach = its hit circle (b.pad)
     rx: (c, b) => { // Roundabout EX: a bigger orange boomerang (never pink: it can't be parried)
-      c.rotate(b.age * 12); boomer(c, 34, '#f28a2e'); },
+      c.rotate(b.age * 12); boomer(c, b.pad || 34, '#f28a2e'); }, // F2d: arm reach = its hit circle (b.pad)
+    // F3 (Cuphead supers): placeholders, not legacy code
+    bm: (c, b) => drawBeam(c, b),
+    gh: (c, b) => drawGhost(c, b),
   };
+  const SUP_T = () => (window.__portSUP || {});
+  /** F3 Energy Beam: a wide bright band over its whole hit box (box = half sizes, off = its centre ahead), a start flash at
+   *  the gun, a flickering core; past its hit time (b.hx, the end anim) it thins and fades. */
+  function drawBeam(c, b) {
+    const f = Math.cos(b.ang) < 0 ? -1 : 1, L = b.box[0] * 2, H = b.box[1], t = b.age, end = b.hx || 1.25, life = b.life || 1.5;
+    const out = t > end ? Math.max(0, 1 - (t - end) / (life - end)) : 1, grow = Math.min(1, t / .08), fl = .85 + .15 * Math.sin(t * 60);
+    const h = H * grow * (.35 + .65 * out);
+    c.scale(f, 1); if (b.off && b.off[1]) c.translate(0, -b.off[1]);
+    c.globalAlpha = .4 * out; c.fillStyle = '#ffe680'; c.fillRect(0, -h, L, h * 2);
+    c.globalAlpha = .7 * out; c.fillStyle = '#fff3b0'; c.fillRect(0, -h * .62, L, h * 1.24);
+    c.globalAlpha = out; c.fillStyle = '#ffffff'; c.fillRect(0, -h * .3 * fl, L, h * .6 * fl);
+    c.lineWidth = 5; c.strokeStyle = F2INK; c.beginPath(); c.moveTo(0, -h * .62); c.lineTo(L, -h * .62); c.moveTo(0, h * .62); c.lineTo(L, h * .62); c.stroke();
+    for (let i = 0; i < 9; i++) { const x = ((t * 1800 + i * 197) % L), y = ((i * 71) % 100 - 50) / 100 * h * 1.1; c.globalAlpha = .7 * out; c.fillStyle = '#fffbe6'; c.fillRect(x, y - 3, 60, 6); }
+    if (t < .25) { const k = t / .25; c.globalAlpha = 1 - k; star(c, 10, 120 + 160 * k, 70 + 90 * k); c.fillStyle = '#fff6c4'; c.fill(); c.lineWidth = 4; c.strokeStyle = F2INK; c.stroke(); }
+    c.globalAlpha = 1;
+  }
+  /** F3 Giant Ghost: a big translucent dog ghost over its hit box (centre b.off up), a wavy tail, a spin swirl; in its death
+   *  anim (past b.hx) it fades and shrinks. */
+  function drawGhost(c, b) { // b.box = half sizes (hitOf)
+    const W = b.box[0] * 2, H = b.box[1] * 2, t = b.age, end = b.hx || 5.6, d = t > end ? Math.min(1, (t - end) / 1.0833) : 0, fast = t > 1.8;
+    const face = b.vx < -1 ? -1 : b.vx > 1 ? 1 : (b.sd || 1);
+    c.translate(0, -(b.off ? b.off[1] : 0));
+    c.rotate(Math.max(-.07, Math.min(.07, b.vx / 9000)));
+    const k = 1 - .5 * d; c.scale(face * k, k); c.globalAlpha = .62 * (1 - d);
+    const hw = W * .5, hh = H * .5, wv = Math.sin(t * 9) * 10;
+    // body: a round head + a sheet that ends in a wavy tail
+    c.beginPath(); c.moveTo(-hw * .8, -hh * .15);
+    c.bezierCurveTo(-hw * .95, -hh * 1.0, hw * .95, -hh * 1.0, hw * .82, -hh * .15);
+    c.bezierCurveTo(hw * .8, hh * .4, hw * .3, hh * .55, hw * .1 + wv, hh * .78);
+    c.quadraticCurveTo(-hw * .1 - wv, hh * 1.02, -hw * .35, hh * .7);
+    c.quadraticCurveTo(-hw * .6 + wv, hh * .85, -hw * .7, hh * .5);
+    c.quadraticCurveTo(-hw * .9, hh * .3, -hw * .8, -hh * .15); c.closePath();
+    c.fillStyle = '#dff4ff'; c.fill(); c.lineWidth = 6; c.strokeStyle = '#3b6f9a'; c.stroke();
+    // floppy ears
+    for (const s of [-1, 1]) { c.beginPath(); c.ellipse(s * hw * .62, -hh * .5, hw * .2, hh * .26, s * .5 + Math.sin(t * 7) * .1, 0, 7); c.fillStyle = '#bfe3fb'; c.fill(); c.lineWidth = 5; c.stroke(); }
+    // face: eyes, nose, a grin
+    c.fillStyle = '#1d3550'; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hw * .12 + s * hw * .2, -hh * .45, hw * .07, hh * .07, 0, 0, 7); c.fill(); }
+    c.beginPath(); c.ellipse(hw * .42, -hh * .3, hw * .09, hh * .05, 0, 0, 7); c.fill();
+    c.lineWidth = 5; c.beginPath(); c.arc(hw * .2, -hh * .28, hw * .22, .3, 2.2); c.strokeStyle = '#1d3550'; c.stroke();
+    // the spin: two swirl arcs round the body, faster in the fast phase
+    c.globalAlpha = .7 * (1 - d); c.rotate(t * (fast ? 14 : 6)); c.lineWidth = 7; c.strokeStyle = '#ffffff';
+    for (let i = 0; i < 2; i++) { c.beginPath(); c.arc(0, 0, hw * 1.05, i * Math.PI, i * Math.PI + 1.3); c.stroke(); }
+    c.globalAlpha = 1;
+  }
+  /** F3: the ghost's heart, a pink heart at its parry radius (e.hr). */
+  function drawHeart(c, e) {
+    const r = e.hr || 26; c.save(); c.translate(e.x, e.y); c.rotate(Math.sin(e.age * 5) * .15);
+    c.beginPath(); c.moveTo(0, r * .9); c.bezierCurveTo(-r * 1.6, -r * .1, -r * .7, -r * 1.25, 0, -r * .45); c.bezierCurveTo(r * .7, -r * 1.25, r * 1.6, -r * .1, 0, r * .9); c.closePath();
+    c.fillStyle = '#f28ab8'; c.fill(); c.lineWidth = 4; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
+    c.beginPath(); c.ellipse(-r * .45, -r * .45, r * .22, r * .14, -.6, 0, 7); c.fillStyle = '#ffe1ef'; c.fill(); c.restore();
+  }
+  /** F3: per player, a super start (the frozen wind-up: a ring closing in, its colour by super) and Invincibility (a golden
+   *  glow + sparkles for glow s, then blinks: blink s off / on, until drain s). */
+  const SUP_COL = { beam: ['#fff3a0', '#ffd23a'], inv: ['#fff2b8', '#ffb92e'], ghost: ['#e6f6ff', '#7fc3ef'] };
+  function drawSupers(c) {
+    const S = SUP_T();
+    for (const q of chgPl) {
+      if (!q || q.s === 'dead') continue;
+      const x = q.x, y = PGY - q.h - .55 * UN;
+      if (q.s === 'super' && q.su && S[q.su]) {
+        const d = S[q.su], k = Math.min(1, q.st / d.start), col = SUP_COL[d.kind] || SUP_COL.beam;
+        if (k < 1) {
+          c.save(); c.translate(x, y);
+          const g = c.createRadialGradient(0, 0, 0, 0, 0, 90 + 40 * k); g.addColorStop(0, col[0]); g.addColorStop(1, 'rgba(255,255,255,0)');
+          c.globalAlpha = .45 + .4 * k; c.fillStyle = g; c.beginPath(); c.arc(0, 0, 90 + 40 * k, 0, 7); c.fill();
+          c.globalAlpha = 1; c.rotate(q.st * 5); star(c, 8, 150 * (1 - k) + 50, 120 * (1 - k) + 34); c.lineWidth = 5; c.strokeStyle = col[1]; c.stroke();
+          c.restore();
+        }
+      }
+      if (q.si > 0 && S.inv) {
+        const d = S.inv, e = d.dur - q.si;
+        if (e >= d.drain) continue;
+        if (e >= d.glow && ((e - d.glow) % (2 * d.blink)) < d.blink) continue; // a blink: off first
+        c.save(); c.translate(x, y);
+        const R = 78 + 6 * Math.sin(e * 10), g = c.createRadialGradient(0, 0, 10, 0, 0, R);
+        g.addColorStop(0, 'rgba(255,246,190,.75)'); g.addColorStop(.6, 'rgba(255,205,70,.45)'); g.addColorStop(1, 'rgba(255,190,40,0)');
+        c.fillStyle = g; c.beginPath(); c.arc(0, 0, R, 0, 7); c.fill();
+        c.lineWidth = 4; c.strokeStyle = 'rgba(255,214,90,.9)'; c.beginPath(); c.arc(0, 0, R * .8, 0, 7); c.stroke();
+        for (let i = 0; i < 6; i++) { const a = e * 3 + i * Math.PI / 3, rr = R * (.7 + .25 * Math.sin(e * 7 + i)); c.save(); c.translate(Math.cos(a) * rr, Math.sin(a) * rr); c.rotate(e * 6 + i); star(c, 4, 11, 3.5); c.fillStyle = '#fffbe0'; c.fill(); c.lineWidth = 2; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
+        c.restore();
+      }
+    }
+  }
   /** A boomerang: two thick rounded arms in a wide V, ink outline, a light stripe along the arms. */
   function boomer(c, r, col) {
     const arm = () => { c.beginPath(); c.moveTo(-r, r * .45); c.quadraticCurveTo(-r * .45, -r * .45, 0, -r * .4); c.quadraticCurveTo(r * .45, -r * .45, r, r * .45); };
@@ -22726,7 +22820,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       c.restore();
     }
   }
-  const drawF2 = (c) => { for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); };
+  const drawF2 = (c) => { for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
   /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
      Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
   const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
@@ -23567,7 +23661,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       for (const k in s.gateOpen) if (!gateSeen[k]) { gateSeen[k] = 1; gateT[k] = s.T; }
       gateOpen = clone(s.gateOpen); popped = clone(s.popped); got = clone(s.got);
       petalT = s.petalT; petalGo = s.petalGo; T0 = s.introT;
-      bul = bulOf(s.bullets); eShots = clone(s.eShots); chgPl = clone(s.players || []);
+      bul = bulOf(s.bullets); eShots = eshOf(s.eShots); chgPl = clone(s.players || []);
       hits = s.hits; brk = s.brk; tgtHp = clone(s.tgtHp); tgtDead = clone(s.tgtDead);
       camPin = { x: s.cam.x, y: s.cam.y };
       if (!hold && !petalT) levelLook(Math.min(.1, Math.max(0, s.T - lookT)));   // sim seconds, so a slow frame does not run the chunks ahead
@@ -23670,12 +23764,13 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       if (PH_ONLY[s.id] || s.id === 'boss1') bossRun.items = [];   // PH_ONLY: her platforms scroll, they are in the shape list; boss1: the Rat has no platforms (Ruben 2026-10-20), legacy builds its own
       if (s.id === 'boss1' && f.atk && f.atk.d) f.atk = { ...f.atk, name: 'rw_' + f.atk.name };   // D20: a reworked attack is not one of legacy's (its old drawing and Lights Out stay off)
       if (s.id === 'boss7') hanatoSync(f);
-      if (!hold) bossLook(f, dt);
+      const shz = f.shz > 0; // F3: a super hit holds his look 0.15 s (Cuphead stops his animators; the sim runs on)
+      if (!hold && !shz) bossLook(f, dt);
       bossRun.end = s.end || null; bossRun.endT = s.endT;
-      bul = bulOf(s.bullets); eShots = clone(s.eShots); chgPl = clone(s.players || []);
+      bul = bulOf(s.bullets); eShots = eshOf(s.eShots); chgPl = clone(s.players || []);
       if (s.id === 'boss7') hanatoShots();
       const fired = firedAtkEvents(f), look = BOSS_LOOK[s.id];
-      if (look && !hold) look(f, dt, fired, pr, s.players);
+      if (look && !hold) look(f, shz ? 0 : dt, fired, pr, s.players);
       hits = s.hits; brk = s.brk; tgtHp = clone(s.tgtHp); tgtDead = clone(s.tgtDead);
       T = s.T - (hold ? 0 : dt); // pFrame adds dt back (it holds T during hit-stop)
       pFrame(dt);
