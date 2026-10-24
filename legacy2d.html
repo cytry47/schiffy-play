@@ -23624,6 +23624,46 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     VN_CHARS.Bruce.draw = (c, expr) => (vnOn ? vnLook(c, 'Bruce', 'bruce', expr) : bruce0(c, expr));                        // 03_vn :765
   }
 
+  /* ---- D95 boss VN portraits (not legacy code): a door boss in a VN scene is its own 2D fight art (the rigs its fight draws),
+     on the right slot as in the fight (facing the dog, so no mirror). Idle for the intro; the win (expr hurt / scared) holds
+     its hurt flinch. Each look is fitted once from its painted bounds: feet on the slot's floor, BVN.h legacy units tall at
+     most (Schiffy is 285), BVN.w wide at most. A page without the art keeps legacy's unknown-character skip. ---- */
+  const BVN = { h: 330, w: 300 };   // legacy units (vnDraw's sprite scale)
+  const bvnHurt = (e) => e === 'hurt' || e === 'scared';
+  const bvnFight = (h) => ({ x: 0, hx: 0, hy: 0, state: 'idle', hp: 1, max: 1, show: 1, hit: h ? 0.5 : 0, phase: 1, atk: null, ssv: 1, sz: 1, dieT: 0, rt: 0, hz: [] });
+  const BOSS_ART = {
+    Rat: [() => window.Rat && window.RatAnim && window.RatNew, (c, h, t) => Rat.drawRig(c, 0, 0, RatNew.S, Object.assign(h ? RatAnim.pose('hurt', 0.12) : RatAnim.pose('idle', t), { flash: false }))],
+    'DJ Moki': [() => window.Moki && window.MokiAnim && window.DjMokiNew, (c, h, t) => Moki.drawRig(c, 0, 0, DjMokiNew.S2, Object.assign(MokiAnim.pose(h ? 'hurt' : 'idle', h ? 0.12 : t), { flash: false }))],
+    Cammy: [() => window.CammyNew && CammyNew.ok, (c, h, t) => CammyNew.drawFight(c, bvnFight(h), false, t)],
+    Hanato: [() => window.HanatoNew && HanatoNew.ok, (c, h, t) => HanatoNew.drawFight(c, bvnFight(h), false, t)],
+    Magpie: [() => window.Magpie && window.MgAnim && window.MgNew, (c, h, t) => Magpie.drawRig(c, 0, 0, MgNew.S, Object.assign(MgAnim.pose(h ? 'hurt' : 'idle', h ? 0.12 : t), { flash: false }))],
+    Stargazer: [() => window.Stargazer && window.SgAnim && window.SgNew, (c, h, t) => Stargazer.drawRig(c, 0, 0, SgNew.SG_S, Object.assign(SgAnim.pose(h ? 'hurt' : 'idle', h ? 0.12 : t), { flash: false }))],
+  };
+  const bvnFit = {};   // name + look -> { k, cx, by }: scale and the painted bounds' bottom centre (art units)
+  function bvnBox(name, h) {
+    const key = name + (h ? ':h' : ':i');
+    if (bvnFit[key]) return bvnFit[key];
+    const N = 1600, cv = document.createElement('canvas'); cv.width = cv.height = N;
+    const g = cv.getContext('2d'); g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = INK;
+    g.translate(N / 2, N * 0.75);
+    try { BOSS_ART[name][1](g, h, 0); } catch (x) { /* art missing: fall back to a plain box below */ }
+    const d = g.getImageData(0, 0, N, N).data;
+    let x0 = N, y0 = N, x1 = -1, y1 = -1;
+    for (let y = 0; y < N; y += 2) for (let x = 0; x < N; x += 2) if (d[(y * N + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    const bw = x1 < 0 ? 300 : x1 - x0 + 2, bh = x1 < 0 ? 330 : y1 - y0 + 2;
+    return (bvnFit[key] = { k: Math.min(BVN.h / bh, BVN.w / bw), cx: x1 < 0 ? 0 : (x0 + x1) / 2 - N / 2, by: x1 < 0 ? 0 : y1 - N * 0.75 });
+  }
+  for (const name in BOSS_ART) {   // always there (legacy vnDraw reads VN_CHARS[char] for every shown portrait); no art = nothing drawn
+    if (VN_CHARS[name]) continue;
+    VN_CHARS[name] = { draw(c, expr) {
+      if (!BOSS_ART[name][0]()) return;
+      const h = bvnHurt(expr), b = bvnBox(name, h);
+      c.save(); c.lineJoin = 'round'; c.lineCap = 'round'; c.strokeStyle = INK;
+      c.scale(b.k, b.k); c.translate(-b.cx, -b.by);
+      try { BOSS_ART[name][1](c, h, vT); } finally { c.restore(); }
+    } };
+  }
+
   /* ---- boss loading card: legacy paints each arena's backdrop ONCE (X_BG.ensure(), ~1 s, synchronous) from timers after
      load (12-15 :198-314); until then it draws the old flat arena, and a timer firing mid-fight freezes the page. The card
      runs them now: this boss's scene first, then the others, one per call (one per frame, so the card keeps animating). ---- */
