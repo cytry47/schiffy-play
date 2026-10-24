@@ -22768,11 +22768,38 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
    *  < 0 after each thinnest step). ph0 = the start step. */
   const COIN_W = [1, .75, .45, .18, .45, .75];
   const coinA = (b, ph0) => { const j = ((Math.floor(b.age * 30 + 1e-6) + ph0) % 12 + 12) % 12; return COIN_W[j % 6] * (j % 6 > 3 ? -1 : 1) * (j >= 6 ? -1 : 1); };
-  /** The streak behind a coin: a solid #ffe58a wedge at 58 % (~1.5 coin widths long) with a 1 px #f6c84c core line. */
+  /** Streak fix (2026-10-24, as the Chaser's boneTrail): an opaque straight wedge behind a shot, in the shot's frame (flight
+   *  along +x, ang = its flight angle): hw half wide from x0 back to xh (the held base), then tapering by width only to 0 at x1.
+   *  A #f6c84c edge at .9, a #ffe58a core (.62 wide) at .95, a 1 px #d6952a lower edge (screen bottom), a #fff3c4 centre line
+   *  over its first 60 %. No alpha fade: see-through gold over the dark / muted arenas read khaki (trail_color_check.py). */
+  function goldWedge(c, ang, x0, xh, x1, hw, cl) {
+    const s = Math.cos(ang) >= 0 ? 1 : -1, w = (m) => { c.beginPath(); c.moveTo(x0, -hw * m); c.lineTo(xh, -hw * m); c.lineTo(x1, 0); c.lineTo(xh, hw * m); c.lineTo(x0, hw * m); c.closePath(); };
+    c.save(); c.rotate(ang); c.globalAlpha = .9; w(1); c.fillStyle = AU; c.fill();
+    c.globalAlpha = 1; c.beginPath(); c.moveTo(x0, s * (hw - .5)); c.lineTo(xh, s * (hw - .5)); c.lineTo(x1, 0); c.lineWidth = 1; c.strokeStyle = AU_LO; c.stroke();
+    c.globalAlpha = .95; w(.62); c.fillStyle = AU_HI; c.fill();
+    c.globalAlpha = 1; c.beginPath(); c.moveTo(x0, 0); c.lineTo(x0 + (x1 - x0) * .6, 0); c.lineWidth = cl; c.lineCap = 'round'; c.strokeStyle = AU_RIM; c.stroke(); c.restore();
+  }
+  /** Spread round 3: the coin's speed-line needle, from the coin's centre (the coin hides the join, no rim gap) back L =
+   *  clamp(flown - 3 r, 0, 4 r): its tip never nearer than 3 r to the spawn point b.o (clear of the dog), fading in (alpha 0 -> 1)
+   *  while flown goes 3 r -> 5 r. .15 r half wide, held over its front 60 %, then tapering straight to a point over the rear
+   *  40 %, its edge colour lightening #f6c84c -> #fbd668 there (the soft tip; #ffe58a there measured chroma .40, at the .39 limit) and the #ffe58a core deepening to #f6c84c there, so
+   *  the needle reads as one gold line, not a shaded cone (a faded-out core measured chroma .39 at the boss6 tip); no alpha fade (a see-through tail measured khaki /
+   *  grey on the shots: trail_color_check.py, round 3). #ffe58a core .62 wide; 1 px #d6952a lower edge and #fff3c4 centre line on the front 40 %. */
+  const NEEDLE = { clear: 3, fadeIn: 2, len: 4, hw: .15, hold: .6, pw: 1 };
   function coinStreak(c, b, r) {
-    c.save(); c.rotate(b.ang); c.globalAlpha = .58;
-    c.beginPath(); c.moveTo(-r * .2, -r * .55); c.lineTo(-r * 3.2, 0); c.lineTo(-r * .2, r * .55); c.closePath(); c.fillStyle = AU_HI; c.fill();
-    c.globalAlpha = 1; c.beginPath(); c.moveTo(-r * .2, 0); c.lineTo(-r * 3, 0); c.lineWidth = 1; c.strokeStyle = AU; c.stroke(); c.restore();
+    const fl = b.o ? Math.hypot(b.x - b.o[0], b.y - b.o[1]) : 1e9, L = Math.max(0, Math.min(NEEDLE.len * r, fl - NEEDLE.clear * r));
+    const a = Math.max(0, Math.min(1, (fl - NEEDLE.clear * r) / (NEEDLE.fadeIn * r)));
+    if (L < r * 1.15 || a <= 0) return;
+    const hw = r * NEEDLE.hw, xh = -L * NEEDLE.hold, s = Math.cos(b.ang) >= 0 ? 1 : -1;
+    const side = (m) => { const P = [[0, hw * m], [xh, hw * m]]; for (let i = 1; i <= 8; i++) { const t = i / 8; P.push([xh - (L + xh) * t, hw * m * Math.pow(1 - t, NEEDLE.pw)]); } return P; };
+    const shape = (m) => { const P = side(m); c.beginPath(); c.moveTo(P[0][0], -P[0][1]); for (const q of P) c.lineTo(q[0], -q[1]); for (let i = P.length - 1; i >= 0; i--) c.lineTo(P[i][0], P[i][1]); c.closePath(); };
+    const grad = (c0, c1, al, a1) => { const g = c.createLinearGradient(0, 0, -L, 0); g.addColorStop(0, `rgba(${c0},${al})`); g.addColorStop(NEEDLE.hold, `rgba(${c0},${al})`);
+      g.addColorStop(1, `rgba(${c1},${a1})`); return g; };
+    c.save(); c.rotate(b.ang); c.globalAlpha = a;
+    shape(1); c.fillStyle = grad('246,200,76', '251,214,104', .9, .9); c.fill();
+    c.beginPath(); c.moveTo(0, s * (hw - .5)); c.lineTo(-L * .5, s * (hw - .5)); c.lineWidth = 1; c.strokeStyle = AU_LO; c.stroke();
+    shape(.62); c.fillStyle = grad('255,229,138', '246,200,76', .95, .95); c.fill();
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(-L * .4, 0); c.lineWidth = b.vk === 'cr' ? 1.5 : 1; c.lineCap = 'round'; c.strokeStyle = AU_RIM; c.stroke(); c.restore();
   }
   /** The drawn radius of a Spread coin: shots .62 x the hit circle (shrinking in their last 30 %, legacy's gems), EX coins .56 x,
    *  growing from .35 to 1 over their first 10 frames. */
@@ -22909,21 +22936,18 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const F2DRAW = {
     pn: (c, b) => { // D96 Peashooter: a gold nugget, ~20 x 16 px at 1280 x 720 (its hit circle b.pad unchanged), a gold streak behind
       const p = b.pad || 5.35, hw = p * 2, hh = p * 1.5;
-      c.save(); c.rotate(b.ang);
-      const g = c.createLinearGradient(-hw * .5, 0, -hw * 4.2, 0); g.addColorStop(0, 'rgba(246,200,76,.48)'); g.addColorStop(1, 'rgba(246,200,76,0)');
-      c.beginPath(); c.moveTo(-hw * .5, -hh * .55); c.lineTo(-hw * 4.2, 0); c.lineTo(-hw * .5, hh * .55); c.closePath();
-      c.fillStyle = g; c.fill(); c.restore();
+      goldWedge(c, b.ang, -hw * .5, -hw * 2.6, -hw * 5, 3, 1.3); // streak fix: 6 px wide, held ~15 px past the nugget, 0 at ~53 behind its centre
       const f = Math.floor((b.age * 60) / NUG_F + 1e-6) % 3; // the tumble: the shape mirrored a new way every NUG_F frames
       const ang = Math.cos(b.ang) < 0 ? b.ang + Math.PI : b.ang; // never drawn upside down (the light stays top-left)
       nugget(c, hw, hh, ang, 2.2, f === 1 ? -1 : 1, f === 2 ? -1 : 1); },
     pi: (c, b) => { // D96 Peashooter EX: a big gold ingot on its hit circle (b.pad), flipping end over end, a sparkle trail
       const R = b.pad || 74.9, k = (R * .86) / 17.1, L = 27 * k, ca = Math.cos(b.ang), sa = Math.sin(b.ang), INK = 5.5;
-      c.save(); c.rotate(b.ang); // a faint gold wake
-      c.beginPath(); c.moveTo(-L * .35, -R * .4); c.lineTo(-L * 1.5, 0); c.lineTo(-L * .35, R * .4); c.closePath(); c.fillStyle = 'rgba(246,200,76,.3)'; c.fill(); c.restore();
-      const N = 7; // sparkles over ~1.5 bar lengths behind it, 100 % -> 40 %, gold and white, drifting back
+      // streak fix: an opaque gold wedge (~26 px wide, held to ~15 px past the ingot, 0 at 1.9 bar lengths) under the sparkles
+      goldWedge(c, b.ang, -L * .3, -(R * .86 + 15), -L * 1.9, R * .17, 2.2);
+      const N = 7; // sparkles over ~1.5 bar lengths behind it, shrinking 100 % -> 40 % (opaque, no fade), gold and white, drifting back
       for (let i = 0; i < N; i++) {
         const u = (i / N + b.age * 2.2) % 1, d = L * .45 + L * 1.5 * u, o = R * .3 * Math.sin(i * 2.4 + 1), r = R * .2 * (1 - .6 * u);
-        c.save(); c.translate(-ca * d - sa * o, -sa * d + ca * o); c.rotate(b.age * 5 + i); c.globalAlpha = 1 - .45 * u * u;
+        c.save(); c.translate(-ca * d - sa * o, -sa * d + ca * o); c.rotate(b.age * 5 + i);
         twinkle(c, r); c.fillStyle = i % 2 ? '#ffffff' : AU; c.fill(); if (u < .5) { c.lineWidth = 1.6; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke(); } c.restore(); }
       // the flip: the face squashes down to ~30 %, shows the bar edge-on (top face band), then the face again; never upside
       // down, so the light top band and the dark bottom band stay on the screen top / bottom (round 3: no bucket pose)
