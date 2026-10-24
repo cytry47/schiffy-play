@@ -22639,10 +22639,14 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   /* and swap a few of legacy's texts: the tutorial prize is a whole golden rose now (Ruben 2026-10-18), and "Press G"
      names the player's Interact key (Settings > Controls; setKeys below) */
   const TXT = { 'follow the trail and find the golden petal \u2192': 'follow the trail and find the golden rose \u2192', 'Press G': 'Press F' };
+  /* F4: legacy's hearts line (02_story_menus.js:933, '♥' x hp + '♡' x (3 - hp) at 14, 34) only knows 3 HP: the port hands legacy
+     hp <= 3 and swaps the drawn line for the real one (Heart / Twin Heart: up to 5 hearts) */
+  let hud1 = null;
   for (const k of ['fillText', 'strokeText']) {
     const orig = CanvasRenderingContext2D.prototype[k];
     CanvasRenderingContext2D.prototype[k] = function (t, x, y, w) {
       if (x === PW - 12 && (y === 26 || y === 48) && this.textAlign === 'right' && this.font.indexOf('15px') >= 0) return;
+      if (hud1 && x === 14 && y === 34 && typeof t === 'string' && /^[\u2665\u2661]+$/.test(t)) t = '\u2665'.repeat(Math.max(0, hud1.hp)) + '\u2661'.repeat(Math.max(0, hud1.hm - hud1.hp));
       if (typeof t === 'string' && TXT[t] !== undefined) t = TXT[t];
       return orig.call(this, t, x, y, w);
     };
@@ -22899,6 +22903,17 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     const tq = mv ? (q.view === 'side' ? Math.floor(wt / OWC.sideCycle * 12 + 1e-6) : Math.floor(ph / 6.2832 * 12 + 1e-6)) : Math.floor(ow.t * 24 + 1e-6);
     return q.view + '|' + mv + '|' + tq + '|' + (boil.checked ? 1 : 0);
   }
+  /** F4 placeholder: a gold coin spinning (x scale) and bobbing over a shadow, at the prop origin (its foot point). */
+  function owDrawCoin(c, t) {
+    const sx = Math.max(.15, Math.abs(Math.cos(t * 2.6))), by = -26 - Math.sin(t * 3) * 4;
+    c.save(); c.fillStyle = 'rgba(20,16,10,.25)'; c.beginPath(); c.ellipse(0, 0, 12, 4, 0, 0, Math.PI * 2); c.fill();
+    c.translate(0, by); c.scale(sx, 1); c.lineWidth = 3; c.strokeStyle = '#14100a'; c.fillStyle = '#f7cf3e';
+    c.beginPath(); c.arc(0, 0, 13, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.strokeStyle = '#c99a12'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 8.5, 0, Math.PI * 2); c.stroke();
+    c.lineWidth = 3; c.beginPath(); c.moveTo(0, -6); c.lineTo(0, 6); c.stroke();
+    c.restore();
+  }
+
   function owDrawP2(c, q) {
     const key = owKey(q);
     if (key !== owP2Key) {
@@ -23073,6 +23088,8 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const FX = {
     // dog (02_story_menus.js)
     takeoff: (e) => { sq(e, .18); pf(e.x, e.y - 5, .5, .25, 0); },                       // pTakeoff :277
+    // F4 (not legacy): Smoke Bomb's puff at the dash start (the dog is hidden for the dash, legacyView blinkA 0)
+    smoke: (e) => { for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; pf(e.x + Math.cos(a) * 22, e.y + Math.sin(a) * 18, 1.1 + (i % 3) * .3, .5, Math.cos(a) * .6, i % 2 ? '#d9d4c8' : '#bdb7aa'); } pf(e.x, e.y, 2, .45, 0, '#eeeae0'); },
     land: (e) => { sq(e, -.25);                                                            // pLand :278-279
       [-1, 1].forEach((d) => { pf(e.x + d * .2 * UN, e.y - 5, .34, .38, d * .55); pf(e.x + d * .1 * UN, e.y - 9, .24, .34, d * .9); pf(e.x + d * .32 * UN, e.y - 4, .18, .3, d * .4); }); },
     death: (e) => { sq(e, .2); pf(e.x, e.y - 60, 2.6, .45, 0, '#fff'); [-1, 1].forEach((q) => pf(e.x + q * 40, e.y - 70, .9, .4, q * .7, '#fff')); }, // pDie :282
@@ -23656,6 +23673,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = hold ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, null, s.players, s.frame);
       Object.assign(P, clone(s.pl));
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3 }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       stReal = null;
       for (const k in s.gateOpen) if (!gateSeen[k]) { gateSeen[k] = 1; gateT[k] = s.T; }
@@ -23703,7 +23721,9 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       }
       const q = s.dogs[1];
       if (q) m.props.push({ x: q.x, y: q.y, npc: 1, l2dP2: 1, draw: (c) => owDrawP2(c, q) });
-      try { owDraw(); } finally { if (q) m.props = m.props.filter((p) => !p.l2dP2); }
+      // F4 (not legacy): the hidden map coins, y-sorted with the props (so a tree in front can hide one)
+      for (const k of s.coins || []) m.props.push({ x: k.x, y: k.y, npc: 1, l2dP2: 1, draw: (c, t) => owDrawCoin(c, s.t) });
+      try { owDraw(); } finally { if (q || (s.coins && s.coins.length)) m.props = m.props.filter((p) => !p.l2dP2); }
       return pcv;
     },
 
@@ -23740,6 +23760,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = s.FRZ > 0 ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, f, s.players, s.frame);
       Object.assign(P, clone(s.pl));
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3 }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       // YOU DIED: legacy shows it (pDraw :937, pDrawBossUI :224) once its one dog has been dead .5 s; the port opens the
       // menu only when every player is dead. Until then the dog's death timer is held for those checks (the ghost keeps the real one)
