@@ -20933,10 +20933,10 @@ window.MOKI_P1_RIG = {"arc":[[-114.0,-212.72],[-110.0,-211.74],[-106.0,-210.8],[
   const HANDS_WIND = 1.5, HANDS_TAIL = 0.4;   // MM.rw.hands wind / tail
   // P2 / P3 acts were keyed to the D11 numbers; group D changed the sim's timings, so the attack clock is warped onto the act clock:
   //   eggs   discs 2 beats apart (1.2 / 2.4 / 3.6; the act flings at 1.2 / 1.8 / 2.4): the wind-up pose is held between throws
-  //   tracer per line track 1.2, lock 1.0, beam 1.2, gap 0.4 = 3.8 s (act loop 2.7: track 1.2, tremble 1.2-1.5, beam 1.5-2.3, back 2.3-2.7):
+  //   tracer per line track 1.2, lock 1.0, beam 1.2, gap 0.01 = 3.41 s (act loop 2.7: track 1.2, tremble 1.2-1.5, beam 1.5-2.3, back 2.3-2.7):
   //          the lock loops the tremble, the beam recoil is stretched
   //   flames per band move 0.6 + ign 1.2, fire 0.75 = 2.55 s (act: fire 1.1-2.5 / 3.6-5.0): the stream starts on the sim's fire
-  const TR = { track: 1.2, lock: 1.0, beam: 1.2, gap: 0.4 }, TR_ACT = 2.7;
+  const TR = { track: 1.2, lock: 1.0, beam: 1.2, gap: 0.01 }, TR_ACT = 2.7;
   const WARP2 = {
     eggs: (t) => warp(eggPts(), t),   // Regular (wind 1.2, 2 beats, 3 discs): [0,0] [1.65,1.65] [2.35,1.75] [2.4,1.8] [2.85,2.25] [3.55,2.35] [3.6,2.4]
     tracer: (t) => {
