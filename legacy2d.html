@@ -22646,6 +22646,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       if (hud1 && hud1.pea) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); nugget(this, 10.5, 7.5, 0, 2); this.restore(); return; } return di.call(this, im, ...a); };
       else if (hud1 && hud1.lob) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); lobIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Lobber's = a gold tennis ball
       else if (hud1 && hud1.chg) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); chgIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Charge's = a gold flying disc
+      else if (hud1 && hud1.rnd) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); rndIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D99: the Roundabout's = a gold frisbee
       else if (hud1 && hud1.cha) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); boneIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Chaser's = a gold bone
       /* D96 Spread: legacy's 3 gem icons (drawImage(gemTex, -9, -6, 20, 15) under translate(g) rotate(g2), :186) are one fan
          of 3 gold coins: drawn on the first gem (its translate / rotate undone), the other two skipped */
@@ -23167,6 +23168,74 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const chgIcon = (c) => { c.save(); c.translate(-1, 2); nugget(c, 17.2, 11.5, 0, 2.2, 1, 1, CHG_GL);
     c.translate(13.5, -7); c.beginPath(); for (let n = 0; n < 8; n++) { const a = n * Math.PI / 4 - Math.PI / 2, r = n % 2 ? 1.5 : 4.6; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
     c.closePath(); c.fillStyle = CHG_CR; c.fill(); c.lineWidth = 1; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke(); c.restore(); };
+  /* D99 Roundabout (locked spec docs/art/ROUNDABOUT_LOCKS.md, round 1): a gold FRISBEE seen tilted. Shot (vk rb): 76 x 34 units
+     incl. its 3 px ink (2.24 : 1, = its hit box 74.9 x 32.1): a domed top face #f2c14e, a thick lighter lip #ffe58a round it, a
+     darker underside band #b07a1e (~26 % of the height), a cream #f6ecd0 rim ring (3.2) and 2 #d6952a groove rings on the face, a
+     big cream paw decal (4 toes + pad, 1 px ink, 34.6 x 31.1 units, 53 % of the face width 65) that turns RB_SPIN a frame in the disc's plane
+     (squashed by a fixed tilt, never per frame); the outline never changes. A short opaque gold wedge along its velocity: on the
+     out-and-back path (sim rb) it points back along the launch line, flipping in the frame its forward speed changes sign (the
+     turnaround), tilted by its side speed up to 25 deg. EX (rx) = the same frisbee x RX_K, upright, spinning, its wedge along
+     its velocity. Draw only: the hit shapes stay the data's (weapons.json round). */
+  const FR_FACE = '#f2c14e', FR_LIP = '#ffe58a', FR_UND = '#b07a1e', FR_CR = '#f6ecd0', FR_GR = '#d6952a';
+  const RB_SPIN = 18 * Math.PI / 180, RX_SPIN = 16 * Math.PI / 180; // the decal's turn a game frame (lock 4: >= 90 deg per 6)
+  const RX_K = 1.85, RB_TW = 9; // EX scale (140 x 62 incl. ink); the wedge's half width (rbTw: narrower while it is short)
+  const rbTw = (L) => RB_TW * Math.min(1, L / 24);
+  /** The frisbee's parts [cx, cy, rx, ry] (k 1, y x ty): underside, lip, dome, face; ring / grooves [cy, rx, ry, width]. */
+  const FR_U = [0, 4.5, 36.5, 11], FR_L = [0, -2, 36.5, 10], FR_D = [0, -5.5, 27, 10], FR_F = [0, -3, 32.5, 9];
+  const FR_RING = [-3, 29.6, 7.4, 3.2], FR_GROOVES = [[-3, 25.4, 5.9, 1.3], [-3, 22, 4.9, 1.1]];
+  const FR_PAW = [[0, .34, .54, .43], [-.7, -.18, .26, .31], [-.27, -.64, .25, .32], [.27, -.64, .25, .32], [.7, -.18, .26, .31]]; // [x, y, rx, ry] x r
+  const FR_PAW_R = 18, FR_PAW_SQ = .5; // the paw's size (34.6 wide, 31.1 tall before the squash) and its fixed tilt squash (round 1: .4 read as pebbles at 1x)
+  /** A cream paw print (4 toes + pad) centred at cx, cy, r, turned rot in the disc's plane, squashed sq (fixed), ink px ink. */
+  function frisPaw(c, cx, cy, r, rot, sq, ink) {
+    c.save(); c.translate(cx, cy); c.scale(1, sq); c.rotate(rot); c.beginPath();
+    for (const q of FR_PAW) { c.moveTo(q[0] * r + q[2] * r, q[1] * r); c.ellipse(q[0] * r, q[1] * r, q[2] * r, q[3] * r, 0, 0, 7); }
+    c.restore(); c.fillStyle = FR_CR; c.fill(); c.lineWidth = ink; c.strokeStyle = F2INK; c.stroke(); // the path keeps the squash, the ink does not
+  }
+  /** The frisbee centred on 0, 0 (k = scale, ty = extra y stretch: 1 in flight, the TAB icon's more open 3/4 view > 1), the
+   *  decal turned spin; ink = the outline width (px). */
+  function frisbee(c, k, ty, spin, ink) {
+    const E = (q, g) => { const x = q[0] * k, y = q[1] * k * ty, rx = Math.max(0, q[2] * k + g), ry = Math.max(0, q[3] * k * ty + g); c.moveTo(x + rx, y); c.ellipse(x, y, rx, ry, 0, 0, 7); };
+    const U = [0, (FR_L[1] + FR_L[3]) - FR_U[3] + 7.5 / ty / ty, FR_U[2], FR_U[3]]; // the underside: its band below the lip 7.5 / ty (seen more from above: thinner)
+    const S = (g) => { const w = FR_L[2] * k + g; c.rect(-w, FR_L[1] * k * ty, 2 * w, (U[1] - FR_L[1]) * k * ty); }; // the rim's straight side, lip to underside (no waist notch)
+    c.beginPath(); E(U, ink / 2); E(FR_L, ink / 2); E(FR_D, ink / 2); S(ink / 2); c.fillStyle = F2INK; c.fill(); // one ink silhouette
+    c.beginPath(); E(U, -ink / 2); S(-ink / 2); c.fillStyle = FR_UND; c.fill();
+    c.beginPath(); E(FR_L, -ink / 2); c.fillStyle = FR_LIP; c.fill();
+    c.beginPath(); E(FR_F, 0); E(FR_D, -ink / 2); c.fillStyle = FR_FACE; c.fill();
+    c.beginPath(); c.ellipse(-11 * k, -11.6 * k * ty, 8 * k, 1.8 * k * ty, -.08, 0, 7); c.fillStyle = FR_LIP; c.fill(); // the dome's light
+    const ring = (q, col) => { c.beginPath(); c.ellipse(0, q[0] * k * ty, q[1] * k, q[2] * k * ty, 0, 0, 7); c.lineWidth = q[3] * k; c.strokeStyle = col; c.stroke(); };
+    for (const q of FR_GROOVES) ring(q, FR_GR); ring(FR_RING, FR_CR);
+    frisPaw(c, 0, -4.5 * k * ty, FR_PAW_R * k, spin, FR_PAW_SQ * ty, Math.max(1, ink / 3));
+  }
+  /** The frisbee's edge distance (incl. ink) along the angle phi from its long axis (an ellipse 38 x 17, x k). */
+  const frisR = (phi, k) => k / Math.hypot(Math.cos(phi) / 38, Math.sin(phi) / 17);
+  /** Lock 7 / no face overlap: the fresh shot is drawn RB_OFF ahead along its launch line (its spawn = the glove tip, at the
+   *  snout; at 32 the disc still covered the chest), the offset going to 0 linearly by RB_OFF_T (6 game frames; 7.3 units a frame < its ~25: never backward). */
+  const RB_MUZ = 16, RB_MUZ_R = 22; // the muzzle burst: its centre ahead of the glove tip, its front spike length
+  const RB_OFF = 44, RB_OFF_T = .1, rbOff = (a) => RB_OFF * Math.max(0, 1 - a / RB_OFF_T);
+  /** The shot's wedge [angle, length] or null. Along its velocity, as seen on the launch line: forward speed fv (its sign =
+   *  out / back: the wedge flips in the one frame it changes), side speed sv tilts it (capped .2 = 11 deg: at 25 deg the short turnaround wedge read as a fin); length 6 + .031 |fv|
+   *  up to 52; on the way out its end stays 10 past the spawn point (drawn offset D included). tools/art/trail_color_check.py
+   *  mirrors this. */
+  function rbTrail(b, D) {
+    const ld = b.ld ?? b.ang, ux = Math.cos(ld), uy = Math.sin(ld), vx = b.vx || 0, vy = b.vy || 0, fv = vx * ux + vy * uy, sv = -vx * uy + vy * ux;
+    if (Math.abs(fv) <= 15) return null;
+    let L = Math.min(52, 6 + Math.abs(fv) * .031);
+    if (fv > 0 && b.ox0 != null) L = Math.min(L, (b.x - b.ox0) * ux + (b.y - b.oy0) * uy + D - 48);
+    if (L <= 3) return null;
+    const t = Math.max(-.2, Math.min(.2, sv / Math.abs(fv)));
+    return [ld + Math.atan2(t, fv > 0 ? 1 : -1), L];
+  }
+  /** The EX's wedge [angle, length] or null: along its velocity, 8 + .07 x speed up to 90; on the out leg its end stays 10 past
+   *  the spawn point. */
+  function rxTrail(b) {
+    const vx = b.vx || 0, vy = b.vy || 0, sp = Math.hypot(vx, vy); if (sp <= 25) return null;
+    const th = Math.atan2(vy, vx); let L = Math.min(90, 8 + sp * .07);
+    if (!b.lg && b.ox0 != null) L = Math.min(L, Math.hypot(b.x - b.ox0, b.y - b.oy0) - frisR(th, RX_K) - 10);
+    return L > 3 ? [th, L] : null;
+  }
+  /** D99: the TAB plate's Roundabout icon (plate space, as hud.ts RND_FRIS): the frisbee 3/4 from above, 35 x 21 (~1.65 : 1, 67 %
+   *  of the 52 plate), the paw upright. */
+  const rndIcon = (c) => { c.save(); c.translate(0, 1); c.lineJoin = 'round'; frisbee(c, .46, 1.42, 0, 2.2); c.restore(); };
   const F2DRAW = {
     pn: (c, b) => { // D96 Peashooter: a gold nugget, ~20 x 16 px at 1280 x 720 (its hit circle b.pad unchanged), a gold streak behind
       const p = b.pad || 5.35, hw = p * 2, hh = p * 1.5;
@@ -23214,10 +23283,14 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     qe: (c, b) => { // Charge EX: a gold paw burst growing to its hit radius (b.pad) round its hit centre (b.off), then shrinking out
       if (b.off) c.translate(Math.cos(b.ang) * b.off[0], Math.sin(b.ang) * b.off[0]);
       chgBurst(c, b); },
-    rb: (c, b) => { // Roundabout: a spinning yellow boomerang
-      c.rotate(b.age * 16); boomer(c, b.pad || 22, '#f5c43a'); }, // F2d: arm reach = its hit circle (b.pad)
-    rx: (c, b) => { // Roundabout EX: a bigger orange boomerang (never pink: it can't be parried)
-      c.rotate(b.age * 12); boomer(c, b.pad || 34, '#f28a2e'); }, // F2d: arm reach = its hit circle (b.pad)
+    // D99 Roundabout: gold frisbees (frisbee() / rbTrail() above), the trail drawn under the disc
+    rb: (c, b) => { // Roundabout: a tilted gold frisbee 76 x 34 (its hit box 74.9 x 32.1 along b.ang), drawn RB_OFF ahead at first
+      const a = Math.max(0, b.age), ld = b.ld ?? b.ang, D = rbOff(a), rot = chgUp(b.ang); c.translate(Math.cos(ld) * D, Math.sin(ld) * D);
+      const t = rbTrail(b, D); if (t) { const r = frisR(t[0] - rot, 1); goldWedge(c, t[0], -r * .5, -(r + t[1] * .5), -(r + t[1]), rbTw(t[1]), 2); }
+      c.rotate(rot); c.lineJoin = 'round'; frisbee(c, 1, 1, (b.sd || 1) * a * 60 * RB_SPIN, 3); },
+    rx: (c, b) => { // Roundabout EX: the same frisbee x RX_K (~140 x 62), upright, its trail along its velocity (never pink: it can't be parried)
+      const t = rxTrail(b); if (t) { const r = frisR(t[0], RX_K); goldWedge(c, t[0], -r * .5, -(r + t[1] * .5), -(r + t[1]), RB_TW * RX_K, 3); }
+      c.lineJoin = 'round'; frisbee(c, RX_K, 1, (b.sd || 1) * Math.max(0, b.age) * 60 * RX_SPIN, 4.5); },
     // F3 (Cuphead supers): placeholders, not legacy code
     bm: (c, b) => drawBeam(c, b),
     gh: (c, b) => drawGhost(c, b),
@@ -23305,14 +23378,6 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       }
     }
   }
-  /** A boomerang: two thick rounded arms in a wide V, ink outline, a light stripe along the arms. */
-  function boomer(c, r, col) {
-    const arm = () => { c.beginPath(); c.moveTo(-r, r * .45); c.quadraticCurveTo(-r * .45, -r * .45, 0, -r * .4); c.quadraticCurveTo(r * .45, -r * .45, r, r * .45); };
-    c.lineCap = 'round'; c.lineJoin = 'round';
-    arm(); c.lineWidth = r * .62; c.strokeStyle = F2INK; c.stroke();
-    arm(); c.lineWidth = r * .4; c.strokeStyle = col; c.stroke();
-    c.save(); c.translate(0, -r * .07); arm(); c.lineWidth = r * .1; c.strokeStyle = 'rgba(255,248,214,.9)'; c.stroke(); c.restore();
-  }
   /* F2c: the Charge glow at a charging dog's gun (cgK 0..1 = charged part, from legacyView; 1 = full).
      D98 (locked spec 5): the nugget GROWING at the paw tip: chgSize(cg), 10 units wide at cg 0 -> the full shot's 60 x 38 at 1
      (linear in width), held at the glove tip legacy drew this frame (P / p2Look tip; else .5 UN ahead, .27 UN up) along the aim:
@@ -23345,7 +23410,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       } else nugget(c, sz[0], sz[1], ang, sz[2], 1, 1, CHG_GL);
       c.restore(); });
   }
-  const drawF2 = (c) => { drawCoinPops(c); coinLaunch(c); boneLaunch(c); drawMuzG(c, 0); for (const b of peaL) { if (b.vk === 'cn' || b.vk === 'cr') continue; c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } drawCoins(c); drawBones(c); drawLobs(c); drawMuzG(c, 1); for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
+  const drawF2 = (c) => { drawCoinPops(c); coinLaunch(c); boneLaunch(c); drawMuzG(c, 0); for (const b of peaL) { if (b.vk === 'cn' || b.vk === 'cr') continue; c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } drawCoins(c); drawBones(c); drawLobs(c); drawMuzG(c, 1); for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawRbMuz(c); drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
   /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
      Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
   const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
@@ -23594,15 +23659,15 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   // legacy per-player globals the port keeps on its player (src/sim/player.ts "legacy globals, now per player")
   function playerGlobals(pl) {
     jb = pl.jb; db = pl.db; exb = pl.exb; sb = pl.sb; ib = pl.ib;
-    mtr = pl.mtr; weapon = pl.weapon; shotN = pl.shotN; parries = pl.parries; chW = pl.cha || pl.lob || pl.chg ? 1 : 0; // D96: the Lobber's muzzle is its own gold burst too
+    mtr = pl.mtr; weapon = pl.weapon; shotN = pl.shotN; parries = pl.parries; chW = pl.cha || pl.lob || pl.chg || pl.rnd ? 1 : 0; // D96: the Lobber's muzzle is its own gold burst too
     fireNow = 0; // bullets come from the port (legacy would spawn its own in pFrame)
   }
 
   /* D96: Peashooter hits spark gold: the hit spark (legacy pDrawSpark, 02_story_menus.js:143, copied with a gold fill) and
      the EX burst's slivers (legacy exFxDraw 'burst', :234-238, copied gold; legacy skips it as k 'burstG') */
-  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr' || b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le' || b.vk === 'qt' || b.vk === 'qf' || b.vk === 'qe') ? 1 : 0); // D96: Peashooter + Spread + Chaser + Lobber
+  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr' || b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le' || b.vk === 'qt' || b.vk === 'qf' || b.vk === 'qe' || b.vk === 'rb' || b.vk === 'rx') ? 1 : 0); // D96: Peashooter + Spread + Chaser + Lobber + Charge + Roundabout
   /** D96: the hit lookups also see the Chaser's bones (bulF2 'ch' / 'cx'), so their hits spark gold */
-  const bulA = () => bulN().concat(bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le' || b.vk === 'qt' || b.vk === 'qf' || b.vk === 'qe')); // + the Lobber's balls / blast, the Charge's shots / EX
+  const bulA = () => bulN().concat(bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le' || b.vk === 'qt' || b.vk === 'qf' || b.vk === 'qe' || b.vk === 'rb' || b.vk === 'rx')); // + the Lobber's balls / blast, the Charge's shots / EX, the Roundabout's frisbees
   const goldBurst = (b) => { const e = fxL[fxL.length - 1]; if (goldOf(b) && e && e.k === 'burst') e.k = 'burstG'; };
   const pDrawSpark0 = pDrawSpark;
   pDrawSpark = function (c, s) {
@@ -23653,6 +23718,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
             const r = i % 2 ? R * .42 * q * (.55 + .45 * f) : R * (i % 4 ? .72 : 1) * q * f; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
         sp(1); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.stroke(); sp(.62); c.fillStyle = AU_HI; c.fill();
         c.beginPath(); c.arc(0, 0, R * .26, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); continue; }
+      if (m.rz) continue; // D99 Roundabout: drawRbMuz, over the fresh frisbee
       if (m.qz && !m.qr) { m.qr = 1; let bd = 30; // tap or full: the Charge shot fired here (its spawn point back from its age), seen once
         for (const b of bulF2) if ((b.vk === 'qt' || b.vk === 'qf') && b.age <= T - m.t0 + .02) { const d = Math.hypot(b.x - (b.vx || 0) * b.age - m.x, b.y - (b.vy || 0) * b.age - m.y); if (d < bd) { bd = d; m.qz = b.vk === 'qf' ? 2 : 1; m.qo = T - m.t0 - Math.max(0, b.age); } } }
       if (m.qz === 1) { const f = Math.floor((T - m.t0) * 60 + 1e-6); if (f > 1) continue; // round 2: the tap's = 2 game frames, then gone (never left behind)
@@ -23665,6 +23731,22 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       const k = Math.floor((T - m.t0) * 24 + 1e-6), R = .62 * UN * .4 * [1, .82, .58][Math.min(2, k)];
       c.save(); c.translate(m.x, m.y); c.rotate(m.ang + k * .3); star(c, 8, R, R * .45); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke();
       c.beginPath(); c.arc(0, 0, R * .3, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); }
+  }
+  /** D99 Roundabout (lock 7): a 2-frame gold burst at the glove tip, drawn OVER the fresh frisbee (which starts RB_OFF ahead, its
+   *  back rim just past the burst's middle): 10 spikes, the front ones R long, the side / back ones .4 R (clear of cheek and snout),
+   *  2 px ink, a #ffe58a inner star and a cream centre. */
+  try { window.__rbMuz = 1; } catch (e) { /* no window */ } // tools/art/roundabout_gold_shots.py: window.__noRbMuz skips the burst (its clearance measure)
+  function drawRbMuz(c) {
+    if (window.__noRbMuz) return;
+    for (const m of muzG) { if (!m.rz) continue;
+      if (m.td == null || T < m.td) m.td = T; // its first drawn frame (the shot event can land a step before it is drawn)
+      const f = Math.floor((T - m.td) * 60 + 1e-6); if (f > 1) continue;
+      const R = RB_MUZ_R * [1, .82][f];
+      c.save(); c.translate(m.x + Math.cos(m.ang) * RB_MUZ, m.y + Math.sin(m.ang) * RB_MUZ); c.rotate(m.ang + f * .2); c.lineJoin = 'round';
+      const sp = (q) => { c.beginPath(); for (let i = 0; i < 20; i++) { const a = i * Math.PI / 10, g = .5 + .5 * Math.cos(a);
+          const r = i % 2 ? R * .45 * q * (.55 + .45 * g) : R * q * Math.max(.4, g); c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
+      sp(1); c.fillStyle = AU; c.fill(); c.lineWidth = 2; c.strokeStyle = F2INK; c.stroke(); sp(.6); c.fillStyle = AU_HI; c.fill();
+      c.beginPath(); c.arc(0, 0, R * .2, 0, 7); c.fillStyle = FR_CR; c.fill(); c.restore(); }
   }
   function drawGoldMuzzle(c, layer) {
     for (const e of fxL) {
@@ -23814,9 +23896,9 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
 
   function shotFx(e, pl) {                                                                               // pSpawn :529-531
-    if (pl && (pl.weapon || pl.cha || pl.lob || pl.chg)) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang, ch: pl.cha ? 1 : 0, lo: pl.lob ? 1 : 0, qz: pl.chg ? 1 : 0 }); // D96 Charge: the gold burst round the fresh shot (m.qz 1 tap; drawMuzG makes it 2 = full once it sees the full shot) // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG); the Chaser's at 60 %
+    if (pl && (pl.weapon || pl.cha || pl.lob || pl.chg || pl.rnd)) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang, ch: pl.cha ? 1 : 0, lo: pl.lob ? 1 : 0, qz: pl.chg ? 1 : 0, rz: pl.rnd && !e.ex ? 1 : 0 }); // D96 Charge: the gold burst round the fresh shot (m.qz 1 tap; drawMuzG makes it 2 = full once it sees the full shot) // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG); the Chaser's at 60 %
     else flashL.push({ x: e.x, y: e.y, t0: T, ang: e.ang, col: pl && pl.pea ? '#ffe9a0' : '#f4fffd' }); // D96: the Peashooter's flash gold
-    const au = pl && (pl.pea || pl.weapon || pl.cha || pl.lob || pl.chg); // D96: the Peashooter / Spread / Chaser EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
+    const au = pl && (pl.pea || pl.weapon || pl.cha || pl.lob || pl.chg || pl.rnd); // D96: the Peashooter / Spread / Chaser EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
     if (e.ex) { fxL.push({ k: au ? 'mstarG' : 'mstar', t0: T, life: .27, x: e.x + Math.cos(e.ang) * .3 * UN, y: e.y + Math.sin(e.ang) * .3 * UN, ang: e.ang });
       if (!e.slot) { exSmoke(P.face); const q = fxL[fxL.length - 1]; if (au && q && q.k === 'smoke') q.k = 'smokeG'; } }
   }
@@ -24330,7 +24412,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = hold ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, null, s.players, s.frame);
       Object.assign(P, clone(s.pl));
-      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob, chg: s.pl.chg }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob, chg: s.pl.chg, rnd: s.pl.rnd }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       stReal = null;
       for (const k in s.gateOpen) if (!gateSeen[k]) { gateSeen[k] = 1; gateT[k] = s.T; }
@@ -24417,7 +24499,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = s.FRZ > 0 ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, f, s.players, s.frame);
       Object.assign(P, clone(s.pl));
-      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob, chg: s.pl.chg }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob, chg: s.pl.chg, rnd: s.pl.rnd }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       // YOU DIED: legacy shows it (pDraw :937, pDrawBossUI :224) once its one dog has been dead .5 s; the port opens the
       // menu only when every player is dead. Until then the dog's death timer is held for those checks (the ghost keeps the real one)
