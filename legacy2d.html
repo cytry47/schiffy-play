@@ -22644,6 +22644,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
          nugget while the Peashooter is in hand; other weapons' icons as before */
       const di = c.drawImage;
       if (hud1 && hud1.pea) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); nugget(this, 10.5, 7.5, 0, 2); this.restore(); return; } return di.call(this, im, ...a); };
+      else if (hud1 && hud1.lob) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); lobIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Lobber's = a gold tennis ball
       else if (hud1 && hud1.cha) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); boneIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Chaser's = a gold bone
       /* D96 Spread: legacy's 3 gem icons (drawImage(gemTex, -9, -6, 20, 15) under translate(g) rotate(g2), :186) are one fan
          of 3 gold coins: drawn on the first gem (its translate / rotate undone), the other two skipped */
@@ -22873,9 +22874,9 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const boneKey = (b) => b.owner + b.vk + Math.round((T - b.age) * 60) + '|' + (b.so == null ? '' : b.so.toFixed(2));
   /** Round 2 trail: an opaque tapering wedge along the path, W px wide at the bone -> 0 over Lm px (shot 6 / 50, EX 9 / 75): a
    *  #f6c84c edge, a #ffe58a core, a #fff3c4 centre line over its first 60 %; at most 2 cream 4-point twinkles (~10 px, 1 px ink). */
-  function boneTrail(c, pts, z) {
+  function boneTrail(c, pts, z, W = 3 * z, Lm = 50 * z, nt = 2) { // D96 Lobber: W / Lm / nt (twinkles) given for the balls
     if (pts.length < 2) return;
-    const W = 3 * z, Lm = 50 * z, P = [[pts[pts.length - 1][0], pts[pts.length - 1][1], 0]];
+    const P = [[pts[pts.length - 1][0], pts[pts.length - 1][1], 0]];
     for (let i = pts.length - 2; i >= 0; i--) { const q = P[P.length - 1], dx = pts[i][0] - q[0], dy = pts[i][1] - q[1], l = Math.hypot(dx, dy); if (l < .01) continue;
       if (q[2] + l >= Lm) { const f = (Lm - q[2]) / l; P.push([q[0] + dx * f, q[1] + dy * f, Lm]); break; } P.push([pts[i][0], pts[i][1], q[2] + l]); }
     if (P.length < 2) return;
@@ -22891,7 +22892,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       c.lineTo(P[i - 1][0] + (P[i][0] - P[i - 1][0]) * f, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * f); }
     c.lineWidth = 1.3 * Math.min(1.4, z); c.lineCap = 'round'; c.strokeStyle = AU_RIM; c.stroke(); c.restore();
     let n = 0; // twinkles: left at the points of every 3rd frame, the newest 2 points skipped, at most 2
-    for (let i = pts.length - 3; i >= 0 && n < 2; i--) { const p = pts[i], f = Math.round(p[2] * 60); if (f % 3) continue; n++;
+    for (let i = pts.length - 3; i >= 0 && n < nt; i--) { const p = pts[i], f = Math.round(p[2] * 60); if (f % 3) continue; n++;
       const u = Math.min(1, (T - p[2]) / .1), r = 6 * Math.min(1.3, z) * (1 - u * .35);
       c.save(); c.translate(p[0], p[1]); c.rotate(f * .5); star(c, 4, r, r * .45); c.fillStyle = AU_RIM; c.fill(); c.lineWidth = 1; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
   }
@@ -22933,6 +22934,143 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
   /** The TAB plate's Chaser icon: one gold bone tilted 25 deg (plate space, as hud.ts BONE). */
   const boneIcon = (c) => bone(c, 0, 0, -.44, { L: 14, r: 4.2, kr: 3.2, w: 2.6, ink: 2.5 }, 1, null);
+  /* D96 Lobber: gold dog toys. Shot (vk 'lb') = a gold tennis ball, EX (vk 'lx') = a big gold rubber ball-bomb (a cream bone
+     emblem, a fuse with a spark), blast (vk 'le') = a gold / cream rubber-hose explosion. All stay in bulF2: drawLobs (layer 2)
+     and drawBlasts (under the dogs), not F2DRAW. Sizes: the ball's drawn radius .9 x its hit radius (pad 21.4 -> 19.3, ~36 px
+     across at 1280 x 720; the ink's outer edge ~ the hit circle), the bomb's .9 x (42.8 -> 38.5, ~72 px across). */
+  const LOB_K = .9, LOB_INK = 2.6, LOBX_INK = 3.5, LOB_SL = .041667; // LOB_SL = the sim's slide s after a bounce (weapons.json lobber shot.slide)
+  /** One gold ball at 0, 0, radius R, ink width ink; roll = the spin (the seam / emblem turn with it, the light stays screen
+   *  top-left). mark(c, R) draws the rolled marks inside the ball's clip. */
+  function goldBall(c, R, ink, roll, mark) {
+    c.beginPath(); c.arc(0, 0, R + ink / 2, 0, 7); c.fillStyle = F2INK; c.fill();
+    c.save(); c.beginPath(); c.arc(0, 0, R - ink / 2, 0, 7); c.fillStyle = '#e9ae3c'; c.fill(); c.clip();
+    c.beginPath(); c.arc(-R * .12, -R * .16, R * .86, 0, 7); c.fillStyle = AU; c.fill(); // the shade = a #e9ae3c crescent low right
+    c.beginPath(); c.arc(R * .62, R * .78, R * .5, 0, 7); c.fillStyle = AU_LO; c.fill(); // a #d6952a core shadow at the bottom right
+    c.beginPath(); c.ellipse(-R * .3, -R * .36, R * .46, R * .34, -.6, 0, 7); c.fillStyle = AU_HI; c.fill(); // the light, top left
+    c.save(); c.rotate(roll); mark(c, R); c.restore(); c.restore();
+    c.beginPath(); c.ellipse(-R * .4, -R * .46, R * .2, R * .12, -.65, 0, 7); c.fillStyle = AU_RIM; c.fill(); // the shine: a cream oval + a white dot
+    c.beginPath(); c.arc(-R * .2, -R * .58, Math.max(1, R * .07), 0, 7); c.fillStyle = '#ffffff'; c.fill();
+  }
+  /** The tennis seam: 2 cream curves facing each other (each a .92 R arc centred 1.32 R out), a #d6952a groove under each. */
+  const tennisSeam = (c, R) => { const A = 1.25, seam = () => { c.beginPath(); c.arc(-R * 1.32, 0, R * .92, -A, A);
+      c.moveTo(R * 1.32 + Math.cos(Math.PI - A) * R * .92, Math.sin(Math.PI - A) * R * .92); c.arc(R * 1.32, 0, R * .92, Math.PI - A, Math.PI + A); };
+    c.lineCap = 'round'; seam(); c.lineWidth = Math.max(2.6, R * .2); c.strokeStyle = AU_LO; c.stroke(); seam(); c.lineWidth = Math.max(1.5, R * .11); c.strokeStyle = AU_RIM; c.stroke(); };
+  /** The bomb's emblem: a cream bone (~1.1 R long) outlined #d6952a, across the ball's middle. */
+  const bombBone = (c, R) => { const a = R * .38, kr = R * .13, r = R * .15, w = R * .085;
+    const path = (g) => { c.beginPath(); c.rect(-a, -w - g, 2 * a, 2 * (w + g)); for (const u of [-a, a]) for (const v of [-kr, kr]) { c.moveTo(u + r + g, v); c.arc(u, v, r + g, 0, 7); } };
+    path(1.6); c.fillStyle = AU_LO; c.fill(); path(0); c.fillStyle = AU_RIM; c.fill(); };
+  /** The bomb's fuse (rolled with the ball): a #d6952a cap, an inked curl, a flickering cream spark at its tip. */
+  function bombFuse(c, R, age) {
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    c.beginPath(); c.rect(-R * .16, -R - 4, R * .32, 7); c.fillStyle = AU_LO; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.stroke();
+    c.beginPath(); c.moveTo(0, -R - 4); c.quadraticCurveTo(R * .3, -R - 12, R * .12, -R - 20); c.lineWidth = 5; c.strokeStyle = F2INK; c.stroke(); c.lineWidth = 2.2; c.strokeStyle = AU_HI; c.stroke();
+    const f = Math.floor(age * 30 + 1e-6), s = [1, .78, .92, .7][f % 4] * 9;
+    c.save(); c.translate(R * .12, -R - 21); c.rotate(f * .7); star(c, 8, s, s * .38); c.fillStyle = AU_RIM; c.fill(); c.lineWidth = 1.6; c.strokeStyle = F2INK; c.stroke(); c.restore();
+  }
+  /* Per ball (key = owner, kind, birth frame): its drawn path (the trail, as boneHist), its start x (the roll) and, per bounce,
+     a gold dust puff on the floor. All look only, rebuilt from the bullets; a rewound T drops what came later. */
+  const lobHist = new Map(), lobX0 = new Map(), lobDust = new Map(), lobSq = new Map(); let lobT = -1;
+  const lobKey = (b) => b.owner + b.vk + Math.round((T - b.age) * 60);
+  /** s = the half gap: the 2 clouds sit at x +- s (the ball's drawn radius + 6) on the ground line y, beside the contact point. */
+  const addDust = (key, x, y, s) => { if (!lobDust.has(key)) lobDust.set(key, { x, y, t0: T, s }); };
+  /* Round 2: c's content drawn by fn (around c's 0, 0, within Rb units) as ONE layer at alpha a (an offscreen pass), so a
+     fading inked cloud fades whole: no ink showing through its fill. a = 1: drawn straight onto c. */
+  const grpC = document.createElement('canvas'), grpX = grpC.getContext('2d');
+  function alphaGroup(c, a, Rb, fn) {
+    if (a >= .999) { fn(c); return; } if (a <= .004) return;
+    const m = c.getTransform(), k = Math.hypot(m.a, m.b) || 1, S = Math.ceil(2 * Rb * k + 8);
+    if (grpC.width < S || grpC.height < S) { grpC.width = Math.max(grpC.width, S); grpC.height = Math.max(grpC.height, S); }
+    grpX.setTransform(1, 0, 0, 1, 0, 0); grpX.clearRect(0, 0, S, S); grpX.setTransform(m.a, m.b, m.c, m.d, S / 2, S / 2); fn(grpX);
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha *= a; c.drawImage(grpC, 0, 0, S, S, m.e - S / 2, m.f - S / 2, S, S); c.restore();
+  }
+  const LOB_DUST_T = 10 / 60, DUST_CR = '#f6ecd0', DUST_R = 11;
+  /** Round 2 bounce dust: 2 cream 3-lobe clouds (one merged shape, one 1.6 px ink outline, a white glint top left), one each side
+   *  of the contact point at x +- s on the ground line (never under the ball), drawn behind the balls; each grows .4 -> 1.6 x
+   *  (main lobe 11 units at 1 x) over 10 frames, easing out, while fading 1 -> 0 as one layer; gone once its alpha < .15 or its
+   *  main lobe < 4 units (no lone bead). */
+  function drawDust(c) {
+    for (const [k, p] of lobDust) { const age = T - p.t0; if (age < -1e-6 || age > LOB_DUST_T) { lobDust.delete(k); continue; }
+      const u = Math.max(0, age / LOB_DUST_T), r = DUST_R * (.4 + 1.2 * (1 - (1 - u) * (1 - u))), al = 1 - u;
+      if (al < .15 || r < 4) continue;
+      const lobes = []; for (const d of [-1, 1]) { const x0 = d * (p.s + r * .55);
+        lobes.push([x0, -r * .8, r], [x0 + d * r * .95, -r * .5, r * .68], [x0 + d * r * .3, -r * 1.4, r * .62]); }
+      c.save(); c.translate(p.x, p.y);
+      alphaGroup(c, al, p.s + r * 3, (g) => { const cl = (e) => { g.beginPath(); for (const q of lobes) { const rr = Math.max(.1, q[2] + e); g.moveTo(q[0] + rr, q[1]); g.arc(q[0], q[1], rr, 0, 7); } };
+        cl(.8); g.fillStyle = F2INK; g.fill(); cl(-.8); g.fillStyle = DUST_CR; g.fill();
+        g.save(); cl(-.8); g.clip(); g.beginPath(); for (const q of lobes) { const rr = q[2] * .42, x = q[0] - q[2] * .3, y = q[1] - q[2] * .32; g.moveTo(x + rr, y); g.arc(x, y, rr, 0, 7); } g.fillStyle = AU_GLINT; g.fill(); g.restore(); });
+      c.restore(); }
+  }
+  /** Round 2 (draw only, the sim's points untouched): a fresh ball / bomb is drawn pushed 16 units forward (the way it flies),
+   *  held its first 3 frames, then easing onto its sim point by .25 s, so it clears the dog's chin (the muzzle burst is pushed the same 16). */
+  const LOB_PUSH = 16, LOB_PUSH_H = .05, LOB_PUSH_T = .25;
+  const lobAt = (b) => { if (b.age >= LOB_PUSH_T) return [b.x, b.y]; const u = Math.max(0, b.age - LOB_PUSH_H) / (LOB_PUSH_T - LOB_PUSH_H), o = LOB_PUSH * (1 - u) * (1 - u); return [b.x + ((b.vx || 0) < 0 ? -o : o), b.y]; };
+  /** The Lobber's balls: each with a short opaque gold arc trail along its real path (boneTrail: shot 7 half wide -> 0 over 60
+   *  units, bomb 11 -> 0 over 100, no twinkles). The shot squashes on its bounce frames (.75 high x 1.3 wide on the impact frame,
+   *  easing back over the slide, its bottom kept on the floor) and stretches along its flight when fast (up to 1.18); it rolls
+   *  .35 rad per radius flown on x. The bomb spins (6 rad/s, the way it flies), no squash. */
+  function drawLobs(c) {
+    const fresh = T !== lobT, live = new Set(); lobT = T;
+    const L = bulF2.filter((b) => b.vk === 'lb' || b.vk === 'lx');
+    for (const b of L) { const key = lobKey(b); live.add(key); let h = lobHist.get(key); if (!h) lobHist.set(key, (h = []));
+      const at = lobAt(b); b.dx = at[0]; b.dy = at[1];
+      while (h.length && h[h.length - 1][2] > T + 1e-6) h.pop();
+      if (fresh || !h.length) h.push([b.dx, b.dy, T]); else h[h.length - 1] = [b.dx, b.dy, T];
+      while (h.length && T - h[0][2] > (b.vk === 'lx' ? .084 : .067)) h.shift(); b.hk = key;
+      if (!lobX0.has(key)) lobX0.set(key, b.x - (b.vx || 0) * b.age);
+      if (lobSq.has(key) && lobSq.get(key) > T + 1e-6) lobSq.delete(key); // rewound: forget a later squash
+      if (b.vk === 'lb' && b.sl > 0) lobSq.set(key, T);
+      if (b.vk === 'lb' && b.nb && b.sl > 0) addDust(key + '|' + b.nb, b.x, b.y + (b.pad || 21.4), (b.pad || 21.4) * LOB_K + 6); }
+    for (const k of lobHist.keys()) if (!live.has(k)) { lobHist.delete(k); lobX0.delete(k); lobSq.delete(k); }
+    drawDust(c);
+    for (const b of L) { const ex = b.vk === 'lx'; boneTrail(c, lobHist.get(b.hk) || [], 1, ex ? 11 : 7, ex ? 100 : 60, 0); }
+    for (const b of L) {
+      const ex = b.vk === 'lx', R = (b.pad || (ex ? 42.8 : 21.4)) * LOB_K, ink = ex ? LOBX_INK : LOB_INK, dir = (b.vx || 0) < 0 ? -1 : 1;
+      c.save(); c.translate(b.dx, b.dy); c.lineJoin = 'round';
+      if (ex) { const roll = dir * b.age * 6; goldBall(c, R, ink, roll, bombBone); c.rotate(roll); bombFuse(c, R, b.age); c.restore(); continue; }
+      const sq = lobSq.get(b.hk), since = sq == null ? 9 : T - sq, fy = (b.pad || 21.4);
+      if (b.sl > 0) { const u = Math.min(1, b.sl / LOB_SL), sy = 1 - .25 * u, sx = 1 + .3 * u; c.translate(0, fy); c.scale(sx, sy); c.translate(0, -fy); }
+      else if (since > 1e-6 && since < 2.5 / 60) { c.translate(0, fy); c.scale(.85, 1.2); c.translate(0, -fy); } // round 2: 2 frames of rebound stretch (.85 x 1.2, bottom kept) after the squash
+      else { const v = Math.hypot(b.vx || 0, b.vy || 0), k = Math.max(0, Math.min(.18, (v - 1000) / 2000)) * Math.min(1, Math.max(0, b.age - LOB_PUSH_H) / .15), a = Math.atan2(b.vy || 0, b.vx || 0); // round 2: no stretch while fresh (it reached back over the chin)
+        if (k > 0) { c.rotate(a); c.scale(1 + k, 1 / (1 + k)); c.rotate(-a); } }
+      goldBall(c, R, ink, (b.x - (lobX0.get(b.hk) ?? b.x)) / R * .35, tennisSeam); c.restore(); }
+  }
+  /** The bomb's blast (le), b.pad = its hit radius xr (149.8), life xt: an 18-ray gold star burst (out to 1.05 xr at ~.1 of its
+   *  life, shrinking away by .45) behind one puffy cloud (below), 6 inked cream twinkles thrown out in its first .3 s. Under the dogs. */
+  /* Round 2 blast: ONE cloud. Until age .30 the 11 puffs + a filling core disc are one union (one outer ink outline, a
+     filled centre, no ring hole), gold with cream tops and a thin #d6a038 shade low right (a small share). From .30 the puffs
+     rise 40 u/s and drift out 30 u/s, shrinking to .5 x, the core growing with them (still one mass); the fill cross-fades
+     gold -> cream (246, 236, 208) and the whole cloud (ink too, one layer) fades to 0 over the last .15 s. */
+  const BL_AU = [246, 200, 76], BL_CR = [246, 236, 208], BL_SH = [214, 160, 56], BL_SHC = [228, 214, 178], BL_HI = [255, 243, 196], BL_HIC = [255, 252, 238];
+  const rgbMix = (a, b, u) => 'rgb(' + a.map((v, i) => Math.round(v + (b[i] - v) * u)).join(',') + ')';
+  function blast(c, b) {
+    const X = b.pad || 149.8, life = b.life || .5833, age = Math.max(0, b.age), t = Math.min(1, age / life);
+    const A0 = .30, e = 1 - Math.pow(1 - Math.min(age, A0) / A0, 2), dB = Math.max(0, age - A0), uB = Math.min(1, dB / Math.max(.01, life - A0));
+    const al = age > life - .15 ? Math.max(0, (life - age) / .15) : 1, cu = Math.min(1, uB * 1.6), cu2 = cu * cu * (3 - 2 * cu);
+    c.save(); c.translate(b.x, b.y); c.lineJoin = 'round'; c.lineCap = 'round';
+    if (t < .45) { const R0 = X * 1.05 * (t < .1 ? .55 + .45 * t / .1 : 1 - (t - .1) / .35); // the rays (behind the cloud)
+      c.save(); c.rotate(.15 + t * .5); star(c, 18, R0, R0 * .5); c.fillStyle = AU; c.fill(); c.lineWidth = 4; c.strokeStyle = F2INK; c.stroke();
+      star(c, 18, R0 * .7, R0 * .36); c.fillStyle = AU_HI; c.fill(); c.restore(); }
+    const rr = X * (.3 + .3 * e), pk = age < .07 ? .6 + .4 * age / .07 : 1, sB = 1 - .5 * uB, lift = X * .06 * e + 40 * dB;
+    const pp = []; let dmin = 1e9;
+    for (let i = 0; i < 11; i++) { const a = i * Math.PI * 2 / 11 + .3 + .18 * Math.sin(i * 2.7), r = X * (.25 + .05 * Math.sin(i * 1.9 + 1)) * pk * sB, d = rr * (.92 + .1 * Math.sin(i * 3.1)) + 30 * dB;
+      dmin = Math.min(dmin, d - r * .45); pp.push([Math.cos(a) * d, Math.sin(a) * d - lift, r, Math.sin(a)]); }
+    const core = [0, -lift, Math.max(4, dmin)]; // fills the middle to each puff's inner half: never a ring
+    alphaGroup(c, al, X * 1.7, (g) => { const all = pp.concat([core]);
+      const cl = (o) => { g.beginPath(); for (const q of all) { const r = Math.max(.1, q[2] + o); g.moveTo(q[0] + r, q[1]); g.arc(q[0], q[1], r, 0, 7); } };
+      cl(LOBX_INK / 2 + .5); g.fillStyle = F2INK; g.fill(); cl(-LOBX_INK / 2); g.fillStyle = rgbMix(BL_AU, BL_CR, cu2); g.fill();
+      g.save(); cl(-LOBX_INK / 2); g.clip();
+      g.beginPath(); for (const q of pp) if (q[3] > .25) { const r = q[2] * .36, x = q[0] + q[2] * .3, y = q[1] + q[2] * .62; g.moveTo(x + r, y); g.arc(x, y, r, 0, 7); } g.fillStyle = rgbMix(BL_SH, BL_SHC, cu2); g.fill(); // the thin shade, low puffs only
+      g.beginPath(); for (const q of pp) { const r = q[2] * .5, x = q[0] - q[2] * .25, y = q[1] - q[2] * .3; g.moveTo(x + r, y); g.arc(x, y, r, 0, 7); } g.fillStyle = rgbMix(BL_HI, BL_HIC, cu2); g.fill(); // cream tops
+      if (age < .22) { const r = core[2] * .8 * (1 - age / .22 * .6); g.beginPath(); g.arc(-r * .1, core[1] - r * .12, r, 0, 7); g.fillStyle = AU_HI; g.fill(); // the hot centre (no ink of its own)
+        g.beginPath(); g.arc(-r * .25, core[1] - r * .3, r * .55, 0, 7); g.fillStyle = AU_RIM; g.fill(); }
+      g.restore(); });
+    for (let i = 0; i < 6 && age < A0; i++) { const a = i * Math.PI / 3 + .55, d = X * (.35 + .9 * e), r = 11 * (1 - Math.pow(age / A0, 2)); if (r < 4) break; // the twinkles, gone in the first .3 s (no specks)
+      c.save(); c.translate(Math.cos(a) * d, Math.sin(a) * d); c.rotate(t * 4 + i); twinkle(c, r); c.fillStyle = AU_RIM; c.fill(); c.lineWidth = 1.8; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
+    c.restore();
+  }
+  const drawBlasts = (c) => { for (const b of bulF2) if (b.vk === 'le') blast(c, b); };
+  /** The TAB plate's Lobber icon: one gold tennis ball (plate space, as hud.ts LOB_BALL). */
+  const lobIcon = (c) => goldBall(c, 8.4, 2.2, .5, tennisSeam);
   const F2DRAW = {
     pn: (c, b) => { // D96 Peashooter: a gold nugget, ~20 x 16 px at 1280 x 720 (its hit circle b.pad unchanged), a gold streak behind
       const p = b.pad || 5.35, hw = p * 2, hh = p * 1.5;
@@ -22963,21 +23101,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       const i = (Math.round(b.ang / (Math.PI / 4)) % 8 + 8) % 8;
       coinStreak(c, b, R); coin(c, R, coinA(b, i % 2 ? 3 : 0), 3, gap); },
     // ch / cx (Chaser shot / EX): D96 gold bones, drawBones above
-    lb: (c, b) => { // Lobber: a round purple blob, squashed a little along its flight; F2d: drawn at its hit radius (b.pad)
-      c.rotate(b.ang); const k = Math.min(.18, Math.hypot(b.vx, b.vy) / 9000); c.scale(1 + k, 1 - k);
-      const z = (b.pad || 12) / 12; c.scale(z, z);
-      c.beginPath(); c.arc(0, 0, 12, 0, 7); c.fillStyle = '#8a5bd6'; c.fill(); c.lineWidth = 3; c.strokeStyle = F2INK; c.stroke();
-      c.beginPath(); c.ellipse(-3, -4, 4.5, 3, -.5, 0, 7); c.fillStyle = '#d9c6ff'; c.fill(); },
-    lx: (c, b) => { // Lobber EX: a black bomb with a sparking fuse; F2d: the ball drawn at its hit radius (b.pad)
-      c.rotate(b.age * 8); const z = (b.pad || 16) / 16; c.scale(z, z);
-      c.beginPath(); c.arc(0, 0, 16, 0, 7); c.fillStyle = '#2b2440'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = F2INK; c.stroke();
-      c.beginPath(); c.ellipse(-5, -6, 5, 3.2, -.6, 0, 7); c.fillStyle = '#7d73a6'; c.fill();
-      c.lineWidth = 3; c.strokeStyle = '#c99a4a'; c.beginPath(); c.moveTo(0, -16); c.quadraticCurveTo(6, -24, 3, -29); c.stroke();
-      c.translate(3, -30); c.rotate(b.age * 30); star(c, 4, 7, 2.5); c.fillStyle = '#ffd34a'; c.fill(); },
-    le: (c, b) => { // the bomb's blast: a burst ring growing to its hit radius (b.pad), then fading
-      const t = Math.min(1, b.age / (b.life || .25)), R = (b.pad || 100) * (.55 + .45 * Math.sqrt(t)), a = 1 - t * t;
-      c.globalAlpha = a; star(c, 9, R, R * .72); c.fillStyle = '#ffcf4a'; c.fill(); c.lineWidth = 5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
-      star(c, 9, R * .62, R * .44); c.fillStyle = '#fff5c8'; c.fill(); c.globalAlpha = 1; },
+    // lb / lx / le (Lobber shot / EX / blast): D96 gold dog toys, drawLobs / drawBlasts above
     // F2c (Cuphead Charge / Roundabout): not legacy code either
     qt: (c, b) => { // Charge tap: a small blue pellet with a short streak
       c.rotate(b.ang); c.lineCap = 'round';
@@ -23112,7 +23236,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       c.restore();
     }
   }
-  const drawF2 = (c) => { drawCoinPops(c); coinLaunch(c); boneLaunch(c); drawMuzG(c, 0); for (const b of peaL) { if (b.vk === 'cn' || b.vk === 'cr') continue; c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } drawCoins(c); drawBones(c); drawMuzG(c, 1); for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
+  const drawF2 = (c) => { drawCoinPops(c); coinLaunch(c); boneLaunch(c); drawMuzG(c, 0); for (const b of peaL) { if (b.vk === 'cn' || b.vk === 'cr') continue; c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } drawCoins(c); drawBones(c); drawLobs(c); drawMuzG(c, 1); for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
   /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
      Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
   const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
@@ -23252,9 +23376,10 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       c.stroke(); });
     c.restore();
   }
-  bossDraw = function (c) { bossDraw0(c); if (p2) drawP2(c); if (zonesOv) drawZones(c, zonesOv); };
+  bossDraw = function (c) { bossDraw0(c); drawBlasts(c); if (p2) drawP2(c); // D96: the Lobber blast under both dogs
+ if (zonesOv) drawZones(c, zonesOv); };
   const exFx0 = exFxDraw;   // levels have no bossDraw: player 2 goes in right before player 1's EX layer 0 (pDraw :916)
-  exFxDraw = function (c, layer) { if (layer === 0 && !bossRun && p2) drawP2(c); exFx0(c, layer); drawGoldMuzzle(c, layer); if (layer === 2) { drawGoldBursts(c); drawF2(c); } if (layer === 1 && bossRun && mkPh && bossId === 'boss4') drawPh(c, mkPh.filter(mkStone)); };
+  exFxDraw = function (c, layer) { if (layer === 0 && !bossRun) { drawBlasts(c); if (p2) drawP2(c); } exFx0(c, layer); drawGoldMuzzle(c, layer); if (layer === 2) { drawGoldBursts(c); drawF2(c); } if (layer === 1 && bossRun && mkPh && bossId === 'boss4') drawPh(c, mkPh.filter(mkStone)); };
   petalDone = function () {};   // the port runs the story (legacy pFrame calls this 1.8 s after the petal)
   /* the fight title follows the phase (bossRun.name = the port's title, set in boss()); legacy's Cammy title is a fixed
      'Cammyyy <emote> Initiator', so its name line is drawn as plain text like every other boss */
@@ -23360,15 +23485,15 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   // legacy per-player globals the port keeps on its player (src/sim/player.ts "legacy globals, now per player")
   function playerGlobals(pl) {
     jb = pl.jb; db = pl.db; exb = pl.exb; sb = pl.sb; ib = pl.ib;
-    mtr = pl.mtr; weapon = pl.weapon; shotN = pl.shotN; parries = pl.parries; chW = pl.cha ? 1 : 0;
+    mtr = pl.mtr; weapon = pl.weapon; shotN = pl.shotN; parries = pl.parries; chW = pl.cha || pl.lob ? 1 : 0; // D96: the Lobber's muzzle is its own gold burst too
     fireNow = 0; // bullets come from the port (legacy would spawn its own in pFrame)
   }
 
   /* D96: Peashooter hits spark gold: the hit spark (legacy pDrawSpark, 02_story_menus.js:143, copied with a gold fill) and
      the EX burst's slivers (legacy exFxDraw 'burst', :234-238, copied gold; legacy skips it as k 'burstG') */
-  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr' || b.vk === 'ch' || b.vk === 'cx') ? 1 : 0); // D96: Peashooter + Spread + Chaser
+  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr' || b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le') ? 1 : 0); // D96: Peashooter + Spread + Chaser + Lobber
   /** D96: the hit lookups also see the Chaser's bones (bulF2 'ch' / 'cx'), so their hits spark gold */
-  const bulA = () => bulN().concat(bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx'));
+  const bulA = () => bulN().concat(bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le')); // + the Lobber's balls / blast
   const goldBurst = (b) => { const e = fxL[fxL.length - 1]; if (goldOf(b) && e && e.k === 'burst') e.k = 'burstG'; };
   const pDrawSpark0 = pDrawSpark;
   pDrawSpark = function (c, s) {
@@ -23412,6 +23537,12 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       if (m.ch) { const k = Math.min(2, Math.floor((T - m.t0) * 24 + 1e-6)), R = .62 * UN * .4 * .6 * [1, .92, .84][k];
         c.save(); c.translate(m.x, m.y); c.rotate(m.ang + k * .3); c.globalAlpha = [1, .7, .4][k]; star(c, 6, R, R * .55); c.fillStyle = AU; c.fill();
         c.lineWidth = 2; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke(); c.beginPath(); c.arc(0, 0, R * .32, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); continue; }
+      if (m.lo) { const k = Math.min(2, Math.floor((T - m.t0) * 24 + 1e-6)), R = .62 * UN * .4 * 1.2 * [1, .82, .58][k]; // D96 Lobber: 12 spikes, long / short, under the ball
+        c.save(); c.translate(m.x + Math.cos(m.ang) * LOB_PUSH, m.y + Math.sin(m.ang) * LOB_PUSH); c.rotate(m.ang + k * .3); c.lineJoin = 'round'; // round 2: 16 units forward (as the fresh ball)
+        const sp = (q) => { c.beginPath(); for (let i = 0; i < 24; i++) { const a = i * Math.PI / 12, f = .7 + .3 * Math.cos(a + k * .3); // f: 1 forward -> .4 back (round 2: the back spikes 40 %, clear of the snout)
+            const r = i % 2 ? R * .42 * q * (.55 + .45 * f) : R * (i % 4 ? .72 : 1) * q * f; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
+        sp(1); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.stroke(); sp(.62); c.fillStyle = AU_HI; c.fill();
+        c.beginPath(); c.arc(0, 0, R * .26, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); continue; }
       const k = Math.floor((T - m.t0) * 24 + 1e-6), R = .62 * UN * .4 * [1, .82, .58][Math.min(2, k)];
       c.save(); c.translate(m.x, m.y); c.rotate(m.ang + k * .3); star(c, 8, R, R * .45); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke();
       c.beginPath(); c.arc(0, 0, R * .3, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); }
@@ -23466,7 +23597,8 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     tgtHitEx: (e) => tgtHitFx(e, 1),
     tgtBreak: (e, f, batch) => tgtBreakFx(e, batch),
     shotGround: (e) => { const q = nearest(eShots, e.x, e.y); pf(e.x, PGY - 8, .5, .25, 0, shotCol(q, '#f6ecd0')); }, // eShots step :371
-    shotWall: (e) => { const b = nearest(bulA(), e.x, e.y); sparkL.push({ x: e.x, y: e.y, t0: T, ang: (b ? b.ang : 0) + Math.PI, s: .7, gold: goldOf(b) }); pf(e.x, e.y, .5, .25, 0); }, // not legacy (Ruben 2026-10-17): a shot stops at a surface; legacy's hit spark + puff
+    shotWall: (e) => { const b = nearest(bulA(), e.x, e.y); if (b && b.vk === 'lb') addDust('w' + e.frame + '|' + Math.round(e.x), e.x, e.y + 4, 1.5); // D96 Lobber: its last bounce puffs too
+      sparkL.push({ x: e.x, y: e.y, t0: T, ang: (b ? b.ang : 0) + Math.PI, s: .7, gold: goldOf(b) }); pf(e.x, e.y, .5, .25, 0); }, // not legacy (Ruben 2026-10-17): a shot stops at a surface; legacy's hit spark + puff
     gemPop: (e) => { const b = nearest(bulN(), e.x, e.y); popG.push({ x: e.x, y: e.y, t0: T, ang: b ? b.ang : 0 }); }, // :463; D96: a gold pop (drawCoinPops)
     exCharge: (e) => {                                                                                   // pEx :248
       fxL.push({ k: 'charge', t0: T, life: .26, peb: Array.from({ length: 7 }, (_, i) => ({ sx: (i % 2 ? 1 : -1) * (.25 + Math.random() * .35) * UN, vx: (i % 2 ? 1 : -1) * (40 + Math.random() * 90), vy: -(110 + Math.random() * 170) })) }); },
@@ -23519,7 +23651,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       pf(e.x, e.y, 1.7, .35, 0, pk ? '#f28ab8' : '#8a7fb0'); pf(e.x, PGY - 60, 1.2, .3, -.5, '#8a7fb0'); pf(e.x, PGY - 60, 1.2, .3, .5, '#8a7fb0'); },
     peelBurst: (e) => { pf(e.x, PGY - 150, 1.8, .5, 0); pf(e.x, PGY - 60, 1.4, .4, 0); },               // hanatoXformStep :103
     mirror: () => { const L = lvlL(), m = (o) => { if (o.x != null) o.x = L - o.x; if (o.vx != null) o.vx = -o.vx; if (o.ang != null) o.ang = Math.PI - o.ang; if (typeof o.d === 'number') o.d = -o.d; };
-      [puffL, fxL, flashL, sparkL, popL, popG, muzG, debL, bugFall].forEach((l) => l.forEach(m)); boneHist.clear(); },                  // cammyFlip :222 (bullets / shots: the port)
+      [puffL, fxL, flashL, sparkL, popL, popG, muzG, debL, bugFall].forEach((l) => l.forEach(m)); boneHist.clear(); lobHist.clear(); lobX0.clear(); lobDust.clear(); },                  // cammyFlip :222 (bullets / shots: the port)
     crateBreak: (e) => { const q = nearest(eShots, e.x, PGY - 40);                                      // ratCrateStep :250
       pf(e.x, PGY - 10, 1, .3, 0, shotCol(q, '#f6ecd0')); [-1, 1].forEach((d) => pf(e.x + d * 30, PGY - 8, .4, .3, d * .7)); },
   };
@@ -23563,9 +23695,9 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
 
   function shotFx(e, pl) {                                                                               // pSpawn :529-531
-    if (pl && (pl.weapon || pl.cha)) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang, ch: pl.cha ? 1 : 0 }); // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG); the Chaser's at 60 %
+    if (pl && (pl.weapon || pl.cha || pl.lob)) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang, ch: pl.cha ? 1 : 0, lo: pl.lob ? 1 : 0 }); // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG); the Chaser's at 60 %
     else flashL.push({ x: e.x, y: e.y, t0: T, ang: e.ang, col: pl && pl.pea ? '#ffe9a0' : '#f4fffd' }); // D96: the Peashooter's flash gold
-    const au = pl && (pl.pea || pl.weapon || pl.cha); // D96: the Peashooter / Spread / Chaser EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
+    const au = pl && (pl.pea || pl.weapon || pl.cha || pl.lob); // D96: the Peashooter / Spread / Chaser EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
     if (e.ex) { fxL.push({ k: au ? 'mstarG' : 'mstar', t0: T, life: .27, x: e.x + Math.cos(e.ang) * .3 * UN, y: e.y + Math.sin(e.ang) * .3 * UN, ang: e.ang });
       if (!e.slot) { exSmoke(P.face); const q = fxL[fxL.length - 1]; if (au && q && q.k === 'smoke') q.k = 'smokeG'; } }
   }
@@ -24079,7 +24211,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = hold ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, null, s.players, s.frame);
       Object.assign(P, clone(s.pl));
-      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       stReal = null;
       for (const k in s.gateOpen) if (!gateSeen[k]) { gateSeen[k] = 1; gateT[k] = s.T; }
@@ -24166,7 +24298,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = s.FRZ > 0 ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, f, s.players, s.frame);
       Object.assign(P, clone(s.pl));
-      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       // YOU DIED: legacy shows it (pDraw :937, pDrawBossUI :224) once its one dog has been dead .5 s; the port opens the
       // menu only when every player is dead. Until then the dog's death timer is held for those checks (the ghost keeps the real one)
