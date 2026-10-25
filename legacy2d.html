@@ -22645,6 +22645,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       const di = c.drawImage;
       if (hud1 && hud1.pea) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); nugget(this, 10.5, 7.5, 0, 2); this.restore(); return; } return di.call(this, im, ...a); };
       else if (hud1 && hud1.lob) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); lobIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Lobber's = a gold tennis ball
+      else if (hud1 && hud1.chg) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); chgIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Charge's = a gold flying disc
       else if (hud1 && hud1.cha) c.drawImage = function (im, ...a) { if (im === bulletTex && a.length === 4) { this.save(); this.translate(a[0] + a[2] / 2, a[1] + a[3] / 2 - 1); boneIcon(this); this.restore(); return; } return di.call(this, im, ...a); }; // D96: the Chaser's = a gold bone
       /* D96 Spread: legacy's 3 gem icons (drawImage(gemTex, -9, -6, 20, 15) under translate(g) rotate(g2), :186) are one fan
          of 3 gold coins: drawn on the first gem (its translate / rotate undone), the other two skipped */
@@ -22703,14 +22704,17 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
    *  of the width), the 2 dips between them = the notches. Same shape as the plate icon (hud.ts NUGGET). [x, y, r] x hw. */
   const NUG_BODY = [.95, .62], NUG_BUMPS = [[.36, -.54, .28], [-.52, -.34, .25], [.1, .56, .26]];
   const NUG_F = 5;
-  /** The union path of the nugget's parts, half sizes hw x hh, turned by ang, mirrored by fx / fy (the tumble). */
-  function nugParts(c, hw, hh, ang, fx, fy, grow) {
-    const ca = Math.cos(ang), sa = Math.sin(ang), T2 = (x, y) => [x * ca - y * sa, x * sa + y * ca];
-    c.beginPath(); c.ellipse(0, 0, hw * NUG_BODY[0] + grow, hh * NUG_BODY[1] + grow, ang, 0, 7);
-    for (const q of NUG_BUMPS) { const [x, y] = T2(q[0] * hw * fx, q[1] * hh * fy); c.moveTo(x + q[2] * hw + grow, y); c.arc(x, y, q[2] * hw + grow, 0, 7); }
+  /** The union path of the nugget's parts, half sizes hw x hh, turned by ang, mirrored by fx / fy (the tumble). D98 Charge
+   *  (optional, Pea passes none): bk pulls the bumps in toward the middle (x bk), dx / dy shift the whole path on screen. */
+  function nugParts(c, hw, hh, ang, fx, fy, grow, bk = 1, dx = 0, dy = 0) {
+    const ca = Math.cos(ang), sa = Math.sin(ang), T2 = (x, y) => [x * ca - y * sa + dx, x * sa + y * ca + dy];
+    c.beginPath(); c.ellipse(dx, dy, Math.max(0, hw * NUG_BODY[0] + grow), Math.max(0, hh * NUG_BODY[1] + grow), ang, 0, 7); // max 0: the tiny charging nugget's inner parts (never < 0 for Pea's)
+    for (const q of NUG_BUMPS) { const [x, y] = T2(q[0] * hw * fx * bk, q[1] * hh * fy * bk), r = Math.max(0, q[2] * hw + grow); c.moveTo(x + r, y); c.arc(x, y, r, 0, 7); }
   }
-  /** A gold nugget (see NUG_BUMPS), half width hw, half height hh, long axis along ang; the light stays top-left. */
-  function nugget(c, hw, hh, ang, ink, fx = 1, fy = 1) {
+  /** A gold nugget (see NUG_BUMPS), half width hw, half height hh, long axis along ang; the light stays top-left. gl (optional,
+   *  D98 Charge): the Charge's look of the same nugget, gl = [glint colour, [x, y, r] x hw / hh / hh, ...]: see below. */
+  function nugget(c, hw, hh, ang, ink, fx = 1, fy = 1, gl = null) {
+    if (gl) return nugCharge(c, hw, hh, ang, ink, fx, fy, gl);
     nugParts(c, hw, hh, ang, fx, fy, ink / 2); c.fillStyle = F2INK; c.fill(); // the ink: the union grown by ink / 2 ...
     nugParts(c, hw, hh, ang, fx, fy, -ink / 2); c.fillStyle = AU; c.fill(); // ... then the gold inside it
     c.save(); nugParts(c, hw, hh, ang, fx, fy, -ink / 2); c.clip();
@@ -22718,6 +22722,19 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     c.beginPath(); c.arc(hw * .5, hh * .85, hw * .72, 0, 7); c.clip(); nugParts(c, hw, hh, ang, fx, fy, -ink / 2); c.lineWidth = 2.2; c.strokeStyle = AU_RIM; c.stroke(); // 1 px light rim on the dark side
     c.restore();
     c.beginPath(); c.arc(-hw * .36, -hh * .3, Math.max(1.3, hh * .16), 0, 7); c.fillStyle = '#ffffff'; c.fill(); // one small glint
+  }
+  /** D98 Charge: the same nugget (oval body + 3 bumps, ink, light top left) drawn to read as one lumpy gold rock at up to 60 units
+   *  (Pea's round shade disc + rim stroke read as a second blob and its bumps as ears at that size): the bumps pulled in to .85,
+   *  a #d6952a crescent shade along the bottom-right edge (the gold = the same shape shifted up left by .12 hw / .2 hh), a #ffe58a
+   *  light = the shape at .55 x .5 up left, the glints gl (cream). Height = .935 hh + .54 hw + ink, width = 1.9 hw + ink. */
+  const NUG_BK = .85;
+  function nugCharge(c, hw, hh, ang, ink, fx, fy, gl) {
+    nugParts(c, hw, hh, ang, fx, fy, ink / 2, NUG_BK); c.fillStyle = F2INK; c.fill();
+    c.save(); nugParts(c, hw, hh, ang, fx, fy, -ink / 2, NUG_BK); c.fillStyle = AU_LO; c.fill(); c.clip();
+    nugParts(c, hw, hh, ang, fx, fy, -ink / 2, NUG_BK, -hw * .12, -hh * .2); c.fillStyle = AU; c.fill();
+    nugParts(c, hw * .55, hh * .5, ang, fx, fy, 0, NUG_BK, -hw * .3, -hh * .32); c.fillStyle = AU_HI; c.fill();
+    c.restore();
+    c.fillStyle = gl[0]; for (let n = 1; n < gl.length; n++) { const q = gl[n]; c.beginPath(); c.arc(q[0] * hw, q[1] * hh, Math.max(1, q[2] * hh), 0, 7); c.fill(); }
   }
   /** The HUD ingot (hud.ts ING '3.5,27 30.5,27 25,6 9,6', 34 x 30 box) centred on 0,0 at scale k, its height x ys (< 0 =
    *  upside down: the flip); ink = the outline width (not scaled). */
@@ -23071,6 +23088,85 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const drawBlasts = (c) => { for (const b of bulF2) if (b.vk === 'le') blast(c, b); };
   /** The TAB plate's Lobber icon: one gold tennis ball (plate space, as hud.ts LOB_BALL). */
   const lobIcon = (c) => goldBall(c, 8.4, 2.2, .5, tennisSeam);
+  /* D98 Charge (locked spec docs/art/CHARGE_LOCKS.md, round 4): a growing gold NUGGET, Pea's nugget() (same family, bigger).
+     tap (vk qt) = a small nugget 16 x 12 drawn (incl. ink 2) with a short opaque gold wedge; full (qf) = a big nugget 60 x 38
+     (incl. ink 3), cream glints, a wide gold wedge, tumbling 5 deg a frame; charging (drawCharge) = the nugget growing at the
+     paw tip 10 -> 60 wide (linear in cg), throbbing at full; EX (qe) = the gold burst with a cream paw (accepted, unchanged).
+     Draw only: both shots' hit box (weapons.json charge shot.box) = 66.8 along the flight x 20.3 across, centred 6.6 behind
+     b.x (b.off); the EX hit circle = b.pad 128.1 round b.off. */
+  const CHG_MUZ = [26 - 6.6, 16 - 6.6], CHG_CR = '#f6ecd0';
+  /** Nugget half sizes + ink: width = 1.9 hw + ink, height = .935 hh + .54 hw + ink (nugCharge: the body .95 hw wide, the bumps
+   *  pulled in to .85 reach .459 hh + .28 hw up / .476 hh + .26 hw down). Tap 16.1 x 11.9, full 60.0 x 37.9. */
+  const CHG_TAP = [7.4, 6.3, 2], CHG_FULL = [30, 20, 3]; // hh / hw .85 / .667
+  const CHG_GL = [CHG_CR, [-.36, -.3, .16], [-.06, -.52, .09]]; // cream glints: the main one + a small one above it
+  /** The size of the charging nugget at k (0..1 charged): width 10 -> 60 (linear), ink 2 -> 3, hh / hw .85 -> .667 (= the full
+   *  shot at 1: no size pop on release). */
+  const chgSize = (k) => { const ink = 2 + k, hw = (10 + 50 * k - ink) / 1.9; return [hw, hw * (.85 + (.667 - .85) * k), ink]; };
+  /** Locked spec 7: the shot is drawn from frame 0, its drawn centre = its hit centre (b.off) + an offset that decays linearly to
+   *  0 by 6 game frames (CHG_OFF_T .1 s). The offset (chgOff0, fixed per shot at its first drawn frame, world units): a dog that
+   *  was holding a charging nugget a moment ago (drawCharge's chgHeld, < .1 s old, within 150 units) -> the shot starts where that
+   *  nugget was (the release step fires from the body, ~65 units behind the held full nugget, over the dog's chest: so it
+   *  simply continues forward from the paw, never jumping back); along the flight capped at .09 x the speed (a frame's drawn
+   *  step stays >= 40 % of the shot's: never backward), across at 30. Else (a quick tap, nothing held) 16 forward (lock 7's
+   *  <= 16). Keyed by the shot's spawn point; tools/art/trail_color_check.py reads it (window.__chgOff) for its corridors. */
+  const CHG_OFF0 = 16, CHG_OFF_T = .1, chgOff = {};
+  try { window.__chgOff = chgOff; } catch (e) { /* no window */ }
+  const chgKey = (b) => { const a = Math.max(0, b.age); return b.vk + ':' + Math.round(b.x - (b.vx || 0) * a) + ':' + Math.round(b.y - (b.vy || 0) * a); };
+  function chgOff0(b) {
+    const k = chgKey(b); if (chgOff[k]) return chgOff[k];
+    const ca = Math.cos(b.ang), sa = Math.sin(b.ang), a = Math.max(0, b.age), o = b.off ? b.off[0] : 0;
+    const hx = b.x - (b.vx || 0) * a + ca * o, hy = b.y - (b.vy || 0) * a + sa * o; // the hit centre at age 0
+    let v = [ca * CHG_OFF0, sa * CHG_OFF0], bd = 150;
+    if (a < CHG_OFF_T) for (const h of chgHeld) if (h && T - h[3] >= 0 && T - h[3] < .1) {
+      const dx = h[0] - hx, dy = h[1] - hy, d = Math.hypot(dx, dy); if (d >= bd) continue; bd = d;
+      const al = Math.max(-CHG_OFF0, Math.min(Math.hypot(b.vx || 0, b.vy || 0) * .09, dx * ca + dy * sa)), pe = Math.max(-30, Math.min(30, -dx * sa + dy * ca));
+      v = [ca * al - sa * pe, sa * al + ca * pe]; }
+    if (Object.keys(chgOff).length > 64) for (const q in chgOff) delete chgOff[q];
+    return (chgOff[k] = v);
+  }
+  const chgU = (b) => Math.max(0, 1 - Math.max(0, b.age) / CHG_OFF_T);
+  /** The drawn offset along the flight now (the wedge's length keeps its end past the spawn point). */
+  const chgPush = (b) => { const v = chgOff0(b); return (v[0] * Math.cos(b.ang) + v[1] * Math.sin(b.ang)) * chgU(b); };
+  const chgAt = (b) => { const o = b.off ? b.off[0] : 0, v = chgOff0(b), u = chgU(b);
+    return [Math.cos(b.ang) * o + v[0] * u, Math.sin(b.ang) * o + v[1] * u]; };
+  /** A flight angle never drawn upside down (the light stays top-left), as Pea's pn. */
+  const chgUp = (a) => (Math.cos(a) < 0 ? a + Math.PI : a);
+  const CHG_ROT = 5 * Math.PI / 180; // the full shot's tumble: 5 deg a game frame (60 deg per 12)
+  /** Round 3: the full shot's hit spark, ~3 x the tap star (~70 px across at 1280 x 720): 8 rays, #f6c84c, 3 px ink, a #ffe58a
+   *  inner star, a cream centre; 6 game frames (pops in, holds, shrinks), turning. */
+  function chgSpark(c, s, k) {
+    const R = 37 * [.7, 1, 1.05, .95, .8, .6][k], rot = s.ang + k * .18;
+    const st = (m, v) => { c.beginPath(); for (let i = 0; i < 16; i++) { const a = rot + i * Math.PI / 8, r = (i % 2 ? v : 1) * R * m; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
+    c.save(); c.translate(s.x, s.y); c.lineJoin = 'round';
+    st(1, .42); c.fillStyle = AU; c.fill(); c.lineWidth = 3; c.strokeStyle = F2INK; c.stroke();
+    st(.62, .45); c.fillStyle = AU_HI; c.fill();
+    c.beginPath(); c.arc(0, 0, R * .22, 0, 7); c.fillStyle = CHG_CR; c.fill(); c.restore();
+  }
+  /** A cream paw print (r ~ its half height): a main pad and 4 toes, each edged #d6952a (inside the burst: no ink of its own). */
+  function pawMark(c, r) {
+    const pads = [[0, r * .32, r * .48, r * .38], [-r * .6, -r * .2, r * .2, r * .26], [-r * .22, -r * .58, r * .21, r * .27], [r * .22, -r * .58, r * .21, r * .27], [r * .6, -r * .2, r * .2, r * .26]];
+    const pp = (e) => { c.beginPath(); for (const q of pads) { c.moveTo(q[0] + q[2] + e, q[1]); c.ellipse(q[0], q[1], q[2] + e, q[3] + e, 0, 0, 7); } };
+    pp(2.2); c.fillStyle = AU_LO; c.fill(); pp(0); c.fillStyle = AU_RIM; c.fill();
+  }
+  /** The Charge EX: a 12-ray gold burst (ray tips R, valleys .7 R, 5 px ink, a #ffe58a inner star), a cream paw in its middle
+   *  (upright). R grows .45 -> 1 x pad over 6 frames (easing out), holds (a small throb), shrinks to .2 x from .55 of its life;
+   *  the whole burst (ink too, one layer) fades only over its last 4 frames. */
+  const CHG_FADE = 4 / 60;
+  function chgBurst(c, b) {
+    const X = b.pad || 128.1, life = b.life || .625, age = Math.max(0, b.age), t = Math.min(1, age / life);
+    const g = Math.min(1, age / .1), e = 1 - (1 - g) * (1 - g), sh = t > .55 ? (t - .55) / .45 : 0;
+    const R = X * (.45 + .55 * e) * (1 - .8 * sh * sh) * (1 + .03 * Math.sin(age * 40) * (1 - sh)), al = age > life - CHG_FADE ? Math.max(0, (life - age) / CHG_FADE) : 1;
+    if (R < 4) return;
+    alphaGroup(c, al, R + 8, (q) => {
+      const ro = .2 + t * .6, st = (m) => { q.beginPath(); for (let i = 0; i < 24; i++) { const a = ro + i * Math.PI / 12, r = (i % 2 ? .7 : 1) * R * m; q.lineTo(Math.cos(a) * r, Math.sin(a) * r); } q.closePath(); };
+      q.lineJoin = 'round'; st(1); q.fillStyle = AU; q.fill(); q.lineWidth = 5; q.strokeStyle = F2INK; q.stroke();
+      st(.68); q.fillStyle = AU_HI; q.fill(); pawMark(q, R * .36); });
+  }
+  /** D98: the TAB plate's Charge icon (plate space, as hud.ts CHG_NUG): a big gold nugget, the full shot's proportions, 34.9 x
+   *  22.3 (~67 % of the 52 plate), cream glints, a small cream 4-point charge spark (1 px ink) at its top right. */
+  const chgIcon = (c) => { c.save(); c.translate(-1, 2); nugget(c, 17.2, 11.5, 0, 2.2, 1, 1, CHG_GL);
+    c.translate(13.5, -7); c.beginPath(); for (let n = 0; n < 8; n++) { const a = n * Math.PI / 4 - Math.PI / 2, r = n % 2 ? 1.5 : 4.6; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    c.closePath(); c.fillStyle = CHG_CR; c.fill(); c.lineWidth = 1; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke(); c.restore(); };
   const F2DRAW = {
     pn: (c, b) => { // D96 Peashooter: a gold nugget, ~20 x 16 px at 1280 x 720 (its hit circle b.pad unchanged), a gold streak behind
       const p = b.pad || 5.35, hw = p * 2, hh = p * 1.5;
@@ -23103,23 +23199,21 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     // ch / cx (Chaser shot / EX): D96 gold bones, drawBones above
     // lb / lx / le (Lobber shot / EX / blast): D96 gold dog toys, drawLobs / drawBlasts above
     // F2c (Cuphead Charge / Roundabout): not legacy code either
-    qt: (c, b) => { // Charge tap: a small blue pellet with a short streak
-      c.rotate(b.ang); c.lineCap = 'round';
-      c.strokeStyle = 'rgba(120,190,255,.55)'; c.lineWidth = 6; c.beginPath(); c.moveTo(-22, 0); c.lineTo(-6, 0); c.stroke();
-      c.beginPath(); c.ellipse(0, 0, 9, 6.5, 0, 0, 7); c.fillStyle = '#6fb6ff'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.stroke();
-      c.beginPath(); c.ellipse(1.5, -2, 3.5, 2.2, 0, 0, 7); c.fillStyle = '#e4f3ff'; c.fill(); },
-    qf: (c, b) => { // Charge full: a big blue fireball, a flame tail and a white core
-      c.rotate(b.ang);
-      c.beginPath(); c.moveTo(-58, 0); c.quadraticCurveTo(-30, -24, 0, -20); c.lineTo(0, 20); c.quadraticCurveTo(-30, 24, -58, 0); c.closePath();
-      c.fillStyle = 'rgba(90,160,255,.6)'; c.fill();
-      c.beginPath(); c.arc(0, 0, 21, 0, 7); c.fillStyle = '#3f8cf2'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = F2INK; c.stroke();
-      c.beginPath(); c.arc(3, -2, 12, 0, 7); c.fillStyle = '#bfe1ff'; c.fill();
-      c.beginPath(); c.arc(5, -4, 5, 0, 7); c.fillStyle = '#ffffff'; c.fill(); },
-    qe: (c, b) => { // Charge EX: a big blue star burst growing to its hit radius (b.pad), then fading; F2d: round its hit centre (b.off)
+    // D98 Charge: gold nuggets (helpers above), drawn from frame 0. The wedge never reaches back past the spawn point (its length follows the distance flown).
+    qt: (c, b) => { // Charge tap: a small gold nugget (16 x 12) ahead of its hit centre (chgAt), a 7 wide opaque gold wedge up to 30 behind
+      const d = chgAt(b), L = Math.min(30, Math.max(0, b.age) * Math.hypot(b.vx || 0, b.vy || 0) * .8); c.translate(d[0], d[1]);
+      if (L > 9) goldWedge(c, b.ang, -2, -Math.min(L * .6, 12), -L, 3.5, 1.2);
+      const f = Math.floor((Math.max(0, b.age) * 60) / NUG_F + 1e-6) % 3; // Pea's tumble: mirrored a new way every NUG_F frames
+      nugget(c, CHG_TAP[0], CHG_TAP[1], chgUp(b.ang), CHG_TAP[2], f === 1 ? -1 : 1, f === 2 ? -1 : 1, CHG_GL); },
+    qf: (c, b) => { // Charge full: a big gold nugget (60 x 38) ahead of its hit centre, tumbling 5 deg a frame, an 18 wide gold wedge up to 95 past its back
+      const fl = Math.max(0, b.age) * Math.hypot(b.vx || 0, b.vy || 0), dc = fl + (b.off ? b.off[0] : 0) + chgPush(b), X = CHG_FULL[0]; // dc = the drawn centre's distance from the spawn point
+      const d = chgAt(b), L = Math.min(95, Math.max(0, Math.min(fl * .7 - 6, dc - X * .7 - 10))); c.translate(d[0], d[1]); // the wedge's end stays 10 past the spawn point
+      if (L > 4) goldWedge(c, b.ang, -X * .5, -(X * .7 + L * .55), -(X * .7 + L), 9, 2.2); // full width over 55 %, a short taper (a long thin one read khaki on the light arenas)
+      const sg = Math.cos(b.ang) < 0 ? -1 : 1; // rolls forward: clockwise flying right, anticlockwise flying left
+      nugget(c, X, CHG_FULL[1], chgUp(b.ang) + sg * Math.max(0, b.age) * 60 * CHG_ROT, CHG_FULL[2], 1, 1, CHG_GL); },
+    qe: (c, b) => { // Charge EX: a gold paw burst growing to its hit radius (b.pad) round its hit centre (b.off), then shrinking out
       if (b.off) c.translate(Math.cos(b.ang) * b.off[0], Math.sin(b.ang) * b.off[0]);
-      const t = Math.min(1, b.age / (b.life || .25)), R = (b.pad || 100) * (.6 + .4 * Math.sqrt(t)), a = 1 - t * t;
-      c.globalAlpha = a; c.rotate(t * .5); star(c, 7, R, R * .62); c.fillStyle = '#4f9cff'; c.fill(); c.lineWidth = 5; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
-      star(c, 7, R * .6, R * .38); c.fillStyle = '#d6ecff'; c.fill(); c.globalAlpha = 1; },
+      chgBurst(c, b); },
     rb: (c, b) => { // Roundabout: a spinning yellow boomerang
       c.rotate(b.age * 16); boomer(c, b.pad || 22, '#f5c43a'); }, // F2d: arm reach = its hit circle (b.pad)
     rx: (c, b) => { // Roundabout EX: a bigger orange boomerang (never pink: it can't be parried)
@@ -23219,22 +23313,37 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     arm(); c.lineWidth = r * .4; c.strokeStyle = col; c.stroke();
     c.save(); c.translate(0, -r * .07); arm(); c.lineWidth = r * .1; c.strokeStyle = 'rgba(255,248,214,.9)'; c.stroke(); c.restore();
   }
-  /* F2c: the Charge glow at a charging dog's gun (cgK 0..1 = charged part, from legacyView; 1 = full, pulsing with a ring). */
+  /* F2c: the Charge glow at a charging dog's gun (cgK 0..1 = charged part, from legacyView; 1 = full).
+     D98 (locked spec 5): the nugget GROWING at the paw tip: chgSize(cg), 10 units wide at cg 0 -> the full shot's 60 x 38 at 1
+     (linear in width), held at the glove tip legacy drew this frame (P / p2Look tip; else .5 UN ahead, .27 UN up) along the aim:
+     its back end 2 units behind the tip (in the glove), so it sits ahead of the paw, clear of the cheek and snout. Turned to the
+     aim as the shot will fly (chgUp). At full: a throb .92 - 1.08 at 4 Hz, a soft #ffe58a halo (alpha .3, .58 x its width, no
+     ink ring) and 3 cream twinkles (1 px ink) flickering round it. On release the shot is drawn on from there (chgPush). */
   let chgPl = [];
+  const chgHeld = []; // render-only: the last drawn charging nugget per player [x, y, width, T] (chgOff0; read by tools/art/charge_gold_shots.py)
+  try { window.__chgHeld = chgHeld; } catch (e) { /* no window */ }
   function drawCharge(c) {
-    for (const q of chgPl) {
-      if (!q || q.cgK == null || q.cgK < 0 || q.s === 'dead') continue;
-      const k = q.cgK, full = k >= 1, x = q.x + q.face * .55 * UN, y = PGY - q.h - .62 * UN, pu = .5 + .5 * Math.sin(T * (full ? 22 : 9));
-      const R = 6 + 12 * k + (full ? 3 * pu : 0);
-      c.save(); c.translate(x, y);
-      const g = c.createRadialGradient(0, 0, 0, 0, 0, R * 2.4);
-      g.addColorStop(0, full ? 'rgba(200,232,255,.85)' : 'rgba(140,200,255,.55)'); g.addColorStop(1, 'rgba(90,160,255,0)');
-      c.fillStyle = g; c.beginPath(); c.arc(0, 0, R * 2.4, 0, 7); c.fill();
-      c.beginPath(); c.arc(0, 0, R, 0, 7); c.fillStyle = full ? '#9fd2ff' : '#5fa8ff'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.stroke();
-      c.beginPath(); c.arc(R * .2, -R * .25, R * .45, 0, 7); c.fillStyle = '#f2f9ff'; c.fill();
-      if (full) { c.rotate(T * 6); star(c, 4, R * 2.1, R * 1.4); c.lineWidth = 2.5; c.strokeStyle = 'rgba(230,245,255,' + (.5 + .5 * pu) + ')'; c.stroke(); }
-      c.restore();
-    }
+    chgPl.forEach((q, i) => {
+      chgHeld[i] = null;
+      if (!q || q.cgK == null || q.cgK < 0 || q.s === 'dead') return;
+      const k = Math.min(1, q.cgK), full = q.cgK >= 1, sz = chgSize(k), W = 1.9 * sz[0] + sz[2];
+      const am = (q.aim || 0) * Math.PI / 180, dx = Math.cos(am) * q.face, dy = -Math.sin(am), ang = chgUp(Math.atan2(dy, dx));
+      const lk = i === 0 ? P : p2Look, ok = lk && lk.tipOk && lk.tip, fw = W / 2 - 2;
+      const x = (ok ? q.x + lk.tip[0] * q.face : q.x + q.face * .5 * UN) + dx * fw, y = (ok ? PGY - q.h + lk.tip[1] : PGY - q.h - .27 * UN) + dy * fw;
+      chgHeld[i] = [x, y, W, T];
+      c.save(); c.translate(x, y); c.lineJoin = 'round';
+      if (full) {
+        const s = 1 + .08 * Math.sin(T * Math.PI * 8), H = W * .58, g = c.createRadialGradient(0, 0, 0, 0, 0, H);
+        g.addColorStop(0, 'rgba(255,229,138,.3)'); g.addColorStop(.75, 'rgba(255,229,138,.3)'); g.addColorStop(1, 'rgba(255,229,138,0)');
+        c.beginPath(); c.arc(0, 0, H, 0, 7); c.fillStyle = g; c.fill();
+        c.save(); c.scale(s, s); nugget(c, sz[0], sz[1], ang, sz[2], 1, 1, CHG_GL); c.restore();
+        for (let n = 0; n < 3; n++) { // the twinkles: on a ring just outside the nugget, each popping on its own beat
+          const ph = T * 3 + n * .37, u = ph - Math.floor(ph), r = 5 * Math.sin(Math.min(1, u / .9) * Math.PI); if (r < 1) continue;
+          const a = [-2.2, -.7, 2.1][n] + Math.floor(ph) * .9, tx = Math.cos(a) * (W * .5 + 5), ty = Math.sin(a) * (sz[1] * 1.15 + 6);
+          c.save(); c.translate(tx, ty); c.beginPath(); for (let j = 0; j < 8; j++) { const b2 = j * Math.PI / 4, rr = j % 2 ? r * .32 : r; c.lineTo(Math.cos(b2) * rr, Math.sin(b2) * rr); }
+          c.closePath(); c.fillStyle = CHG_CR; c.fill(); c.lineWidth = 1; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
+      } else nugget(c, sz[0], sz[1], ang, sz[2], 1, 1, CHG_GL);
+      c.restore(); });
   }
   const drawF2 = (c) => { drawCoinPops(c); coinLaunch(c); boneLaunch(c); drawMuzG(c, 0); for (const b of peaL) { if (b.vk === 'cn' || b.vk === 'cr') continue; c.save(); c.translate(b.x, b.y); F2DRAW[b.vk](c, b); c.restore(); } drawCoins(c); drawBones(c); drawLobs(c); drawMuzG(c, 1); for (const b of bulF2) { const d = F2DRAW[b.vk]; if (!d) continue; c.save(); c.translate(b.x, b.y); d(c, b); c.restore(); } drawCharge(c); for (const e of hearts) drawHeart(c, e); drawSupers(c); };
   /* Round 3 (REA, Cuphead): boss hit flash 1 frame on / 2 off in pale cyan, hurt blink alpha .3 at 4 Hz from .417 s.
@@ -23485,19 +23594,20 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   // legacy per-player globals the port keeps on its player (src/sim/player.ts "legacy globals, now per player")
   function playerGlobals(pl) {
     jb = pl.jb; db = pl.db; exb = pl.exb; sb = pl.sb; ib = pl.ib;
-    mtr = pl.mtr; weapon = pl.weapon; shotN = pl.shotN; parries = pl.parries; chW = pl.cha || pl.lob ? 1 : 0; // D96: the Lobber's muzzle is its own gold burst too
+    mtr = pl.mtr; weapon = pl.weapon; shotN = pl.shotN; parries = pl.parries; chW = pl.cha || pl.lob || pl.chg ? 1 : 0; // D96: the Lobber's muzzle is its own gold burst too
     fireNow = 0; // bullets come from the port (legacy would spawn its own in pFrame)
   }
 
   /* D96: Peashooter hits spark gold: the hit spark (legacy pDrawSpark, 02_story_menus.js:143, copied with a gold fill) and
      the EX burst's slivers (legacy exFxDraw 'burst', :234-238, copied gold; legacy skips it as k 'burstG') */
-  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr' || b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le') ? 1 : 0); // D96: Peashooter + Spread + Chaser + Lobber
+  const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr' || b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le' || b.vk === 'qt' || b.vk === 'qf' || b.vk === 'qe') ? 1 : 0); // D96: Peashooter + Spread + Chaser + Lobber
   /** D96: the hit lookups also see the Chaser's bones (bulF2 'ch' / 'cx'), so their hits spark gold */
-  const bulA = () => bulN().concat(bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le')); // + the Lobber's balls / blast
+  const bulA = () => bulN().concat(bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le' || b.vk === 'qt' || b.vk === 'qf' || b.vk === 'qe')); // + the Lobber's balls / blast, the Charge's shots / EX
   const goldBurst = (b) => { const e = fxL[fxL.length - 1]; if (goldOf(b) && e && e.k === 'burst') e.k = 'burstG'; };
   const pDrawSpark0 = pDrawSpark;
   pDrawSpark = function (c, s) {
     if (!s.gold || s.big) return pDrawSpark0(c, s);
+    if (s.qf) { const k = Math.floor((T - s.t0) * 60 + 1e-6); if (k >= 0 && k < 6) chgSpark(c, s, k); return; } // round 3: the full Charge hit, 6 game frames (legacy keeps a spark .13 s)
     const k = Math.floor((T - s.t0) * 24 + 1e-6); if (k > 2) return;
     // round 2 (art check): ~36 px across at 1280 x 720 (s 1), flat #f6c84c, a #ffe58a facet upper-left, a 4 px #fff3c4 centre dot, 2.5 px ink
     const R = [17, 19.5, 15][k] * s.s, r = R * .45, n = 6;
@@ -23543,6 +23653,15 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
             const r = i % 2 ? R * .42 * q * (.55 + .45 * f) : R * (i % 4 ? .72 : 1) * q * f; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
         sp(1); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.strokeStyle = F2INK; c.stroke(); sp(.62); c.fillStyle = AU_HI; c.fill();
         c.beginPath(); c.arc(0, 0, R * .26, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); continue; }
+      if (m.qz && !m.qr) { m.qr = 1; let bd = 30; // tap or full: the Charge shot fired here (its spawn point back from its age), seen once
+        for (const b of bulF2) if ((b.vk === 'qt' || b.vk === 'qf') && b.age <= T - m.t0 + .02) { const d = Math.hypot(b.x - (b.vx || 0) * b.age - m.x, b.y - (b.vy || 0) * b.age - m.y); if (d < bd) { bd = d; m.qz = b.vk === 'qf' ? 2 : 1; m.qo = T - m.t0 - Math.max(0, b.age); } } }
+      if (m.qz === 1) { const f = Math.floor((T - m.t0) * 60 + 1e-6); if (f > 1) continue; // round 2: the tap's = 2 game frames, then gone (never left behind)
+        const R = .62 * UN * .4 * .7 * [1, .82][f], mo = CHG_MUZ[0]; // 8 spikes round the fresh tap nugget (it covers their middle), 1 unit ink
+        c.save(); c.translate(m.x + Math.cos(m.ang) * mo, m.y + Math.sin(m.ang) * mo); c.rotate(m.ang + f * .2); c.lineJoin = 'round';
+        const sp = (q) => { c.beginPath(); for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8, g = .7 + .3 * Math.cos(a);
+            const r = i % 2 ? R * .42 * q * (.55 + .45 * g) : R * q * g; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
+        sp(1); c.fillStyle = AU; c.fill(); c.lineWidth = 1; c.strokeStyle = F2INK; c.stroke(); sp(.6); c.fillStyle = AU_HI; c.fill(); c.restore(); continue; }
+      if (m.qz === 2) continue; // D98: the full shot has no muzzle effect (it continues on from the nugget the paw held)
       const k = Math.floor((T - m.t0) * 24 + 1e-6), R = .62 * UN * .4 * [1, .82, .58][Math.min(2, k)];
       c.save(); c.translate(m.x, m.y); c.rotate(m.ang + k * .3); star(c, 8, R, R * .45); c.fillStyle = AU; c.fill(); c.lineWidth = 2.5; c.lineJoin = 'round'; c.strokeStyle = F2INK; c.stroke();
       c.beginPath(); c.arc(0, 0, R * .3, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore(); }
@@ -23668,7 +23787,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     tgtHit[g.id] = .25; if (ex) { exBurst(e.x, e.y, ang); goldBurst(b); tgtPale[g.id] = T; }
     const dd = b ? Math.hypot(e.x - g.x, e.y - Math.max(PGY - HB.targetCy - off, Math.min(PGY - HB.targetLow - off, e.y))) : 0;
     const k = Math.min(dd, 52) / (dd || 1);
-    sparkL.push({ x: g.x + (e.x - g.x) * k, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b) });
+    sparkL.push({ x: g.x + (e.x - g.x) * k, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b), qf: b && b.vk === 'qf' ? 1 : 0 });
   }
   function tgtBreakFx(e, batch) {                                                                        // pBreak :134-140 (state, sfx, gates: the port)
     const g = dummyAt(e.x, 0); if (!g) return;
@@ -23691,13 +23810,13 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   function bossHitFx(e, ex) {                                                                            // bossDamage 08_bosses :127-129
     const b = nearest(bulA(), e.x, e.y), ang = b ? b.ang : Math.PI;
     if (ex) { exBurst(e.x, e.y, ang); goldBurst(b); bossRun.fight.pale = T; }
-    sparkL.push({ x: e.x, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b) });
+    sparkL.push({ x: e.x, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b), qf: b && b.vk === 'qf' ? 1 : 0 }); // round 3: a full Charge hit = its own big spark
   }
 
   function shotFx(e, pl) {                                                                               // pSpawn :529-531
-    if (pl && (pl.weapon || pl.cha || pl.lob)) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang, ch: pl.cha ? 1 : 0, lo: pl.lob ? 1 : 0 }); // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG); the Chaser's at 60 %
+    if (pl && (pl.weapon || pl.cha || pl.lob || pl.chg)) muzG.push({ x: e.x, y: e.y, t0: T, ang: e.ang, ch: pl.cha ? 1 : 0, lo: pl.lob ? 1 : 0, qz: pl.chg ? 1 : 0 }); // D96 Charge: the gold burst round the fresh shot (m.qz 1 tap; drawMuzG makes it 2 = full once it sees the full shot) // D96 round 2: the Spread's (weapon 1) muzzle = the gold burst (drawMuzG); the Chaser's at 60 %
     else flashL.push({ x: e.x, y: e.y, t0: T, ang: e.ang, col: pl && pl.pea ? '#ffe9a0' : '#f4fffd' }); // D96: the Peashooter's flash gold
-    const au = pl && (pl.pea || pl.weapon || pl.cha || pl.lob); // D96: the Peashooter / Spread / Chaser EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
+    const au = pl && (pl.pea || pl.weapon || pl.cha || pl.lob || pl.chg); // D96: the Peashooter / Spread / Chaser EX's muzzle star and smoke are drawn gold (drawGoldMuzzle)
     if (e.ex) { fxL.push({ k: au ? 'mstarG' : 'mstar', t0: T, life: .27, x: e.x + Math.cos(e.ang) * .3 * UN, y: e.y + Math.sin(e.ang) * .3 * UN, ang: e.ang });
       if (!e.slot) { exSmoke(P.face); const q = fxL[fxL.length - 1]; if (au && q && q.k === 'smoke') q.k = 'smokeG'; } }
   }
@@ -24211,7 +24330,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = hold ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, null, s.players, s.frame);
       Object.assign(P, clone(s.pl));
-      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob, chg: s.pl.chg }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       stReal = null;
       for (const k in s.gateOpen) if (!gateSeen[k]) { gateSeen[k] = 1; gateT[k] = s.T; }
@@ -24298,7 +24417,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       p2 = s.p2 || null; p2Dt = s.FRZ > 0 ? 0 : dt; if (!p2) p2Prev = null;
       onEvents(events, f, s.players, s.frame);
       Object.assign(P, clone(s.pl));
-      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
+      hud1 = { hp: P.hp, hm: s.pl.hm || 3, pea: s.pl.pea, cha: s.pl.cha, lob: s.pl.lob, chg: s.pl.chg }; if (P.hp > 3) P.hp = 3;   // F4: legacy's hearts line knows 3 (the text hook draws the real count)
       playerGlobals(s.pl);
       // YOU DIED: legacy shows it (pDraw :937, pDrawBossUI :224) once its one dog has been dead .5 s; the port opens the
       // menu only when every player is dead. Until then the dog's death timer is held for those checks (the ghost keeps the real one)
