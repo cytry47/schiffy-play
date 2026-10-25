@@ -23292,50 +23292,119 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       const t = rxTrail(b); if (t) { const r = frisR(t[0], RX_K); goldWedge(c, t[0], -r * .5, -(r + t[1] * .5), -(r + t[1]), RB_TW * RX_K, 3); }
       c.lineJoin = 'round'; frisbee(c, RX_K, 1, (b.sd || 1) * Math.max(0, b.age) * 60 * RX_SPIN, 4.5); },
     // F3 (Cuphead supers): placeholders, not legacy code
-    bm: (c, b) => drawBeam(c, b),
-    gh: (c, b) => drawGhost(c, b),
+    bm: (c, b) => { if (!window.__noSupFx) drawBeamStars(c, b); }, // round 3: the body is drawn under the dogs (beamsUnder); __noSupFx: tools/art/supers_gold_shots.py's reference frames
+    gh: (c, b) => { if (!window.__noSupFx) drawGhost(c, b); },
   };
   const SUP_T = () => (window.__portSUP || {});
-  /** F3 Energy Beam: a wide bright band over its whole hit box (box = half sizes, off = its centre ahead), a start flash at
-   *  the gun, a flickering core; past its hit time (b.hx, the end anim) it thins and fades. */
-  function drawBeam(c, b) {
+  /* D96 + D100 supers gold (docs/art/SUPERS_LOCKS.md, round 1): the supers' palette (gold #f2c14e, shade #d6952a / #b07a1e,
+     light #ffe58a, cream #f6ecd0, ink F2INK). Not legacy code. */
+  const SU_AU = '#f2c14e', SU_LO = '#d6952a', SU_HI = '#ffe58a', SU_CR = '#f6ecd0';
+  /** One wavy band of the beam: half height h * m, its edges dipping in by up to amp (a wave rushing outward), from 0 to L. */
+  function beamBand(c, L, h, m, amp, t, ph, cap) {
+    const N = Math.max(8, Math.ceil(L / 40)), y = (x, s) => s * (h * m - amp * (.5 + .5 * Math.sin(x / (s < 0 ? 90 : 113) - t * (s < 0 ? 22 : 19) + ph)));
+    c.beginPath(); c.moveTo(0, y(0, -1)); for (let i = 1; i <= N; i++) c.lineTo(L * i / N, y(L * i / N, -1));
+    for (let i = N; i >= 0; i--) c.lineTo(L * i / N, y(L * i / N, 1));
+    if (cap) { const yT = y(0, -1), yB = y(0, 1), r = Math.max(.5, (yB - yT) / 2); c.ellipse(0, (yT + yB) / 2, Math.min(r, .5 * h), r, 0, Math.PI / 2, Math.PI * 1.5); } // round 3: the round left end (x radius <= .5 h), in the same path
+    c.closePath();
+  }
+  /** F3 Energy Beam (D100 A3): a molten gold stream filling its whole hit box (box = half sizes, off = its centre ahead): an
+   *  opaque #d6952a body with ink edges, a #f2c14e river, a #ffe58a core and a flickering cream heart, cream highlights rushing
+   *  out, and cream bark rings (ink-edged) riding down it; a gold start flash at the paw; past its hit time (b.hx, the end
+   *  anim) it thins and fades (the only see-through part). */
+  function beamGeo(b) {
     const f = Math.cos(b.ang) < 0 ? -1 : 1, L = b.box[0] * 2, H = b.box[1], t = b.age, end = b.hx || 1.25, life = b.life || 1.5;
     const out = t > end ? Math.max(0, 1 - (t - end) / (life - end)) : 1, grow = Math.min(1, t / .08), fl = .85 + .15 * Math.sin(t * 60);
-    const h = H * grow * (.35 + .65 * out);
-    c.scale(f, 1); if (b.off && b.off[1]) c.translate(0, -b.off[1]);
-    c.globalAlpha = .4 * out; c.fillStyle = '#ffe680'; c.fillRect(0, -h, L, h * 2);
-    c.globalAlpha = .7 * out; c.fillStyle = '#fff3b0'; c.fillRect(0, -h * .62, L, h * 1.24);
-    c.globalAlpha = out; c.fillStyle = '#ffffff'; c.fillRect(0, -h * .3 * fl, L, h * .6 * fl);
-    c.lineWidth = 5; c.strokeStyle = F2INK; c.beginPath(); c.moveTo(0, -h * .62); c.lineTo(L, -h * .62); c.moveTo(0, h * .62); c.lineTo(L, h * .62); c.stroke();
-    for (let i = 0; i < 9; i++) { const x = ((t * 1800 + i * 197) % L), y = ((i * 71) % 100 - 50) / 100 * h * 1.1; c.globalAlpha = .7 * out; c.fillStyle = '#fffbe6'; c.fillRect(x, y - 3, 60, 6); }
-    if (t < .25) { const k = t / .25; c.globalAlpha = 1 - k; star(c, 10, 120 + 160 * k, 70 + 90 * k); c.fillStyle = '#fff6c4'; c.fill(); c.lineWidth = 4; c.strokeStyle = F2INK; c.stroke(); }
-    c.globalAlpha = 1;
+    return { f, L, H, t, end, out, fl, h: H * grow * (.35 + .65 * out) };
   }
-  /** F3 Giant Ghost: a big translucent dog ghost over its hit box (centre b.off up), a wavy tail, a spin swirl; in its death
-   *  anim (past b.hx) it fades and shrinks. */
+  const beamCv = document.createElement('canvas'), beamX = beamCv.getContext('2d');
+  /** round 3: the beam's body, drawn UNDER the dogs (beamsUnder, with the Lobber blasts); its fade = the whole beam drawn opaque
+   *  offscreen, then put down once at alpha min(1, out x 2), so no ink shows through the cream bark rings. */
+  function drawBeam(c, b) {
+    const a = Math.min(1, beamGeo(b).out * 2); if (a <= 0) return;
+    if (a >= 1) { c.save(); beamBody(c, b); c.restore(); return; }
+    const W = c.canvas.width, Hh = c.canvas.height; if (beamCv.width !== W || beamCv.height !== Hh) { beamCv.width = W; beamCv.height = Hh; }
+    beamX.setTransform(1, 0, 0, 1, 0, 0); beamX.clearRect(0, 0, W, Hh); beamX.setTransform(c.getTransform()); beamX.save(); beamBody(beamX, b); beamX.restore();
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha *= a; c.drawImage(beamCv, 0, 0); c.restore();
+  }
+  function beamBody(c, b) {
+    const { f, L, H, t, h, fl } = beamGeo(b);
+    c.scale(f, 1); if (b.off && b.off[1]) c.translate(0, -b.off[1]);
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    // round 3: band + its round left end are ONE path per layer (beamBand's cap), so no anti-aliased seam at the joint
+    beamBand(c, L, h, 1, 14, t, 0, 1); c.fillStyle = SU_LO; c.fill();
+    c.save(); c.clip();
+    beamBand(c, L, h, .8, 18, t, 1, 1); c.fillStyle = SU_AU; c.fill();
+    beamBand(c, L, h, .45, 16, t, 2.3, 1); c.fillStyle = SU_HI; c.fill();
+    beamBand(c, L, h, .14 * fl, 6, t, 3.1, 1); c.fillStyle = SU_CR; c.fill();
+    c.strokeStyle = SU_CR; c.lineWidth = 6; // the cream highlights rushing out
+    for (let i = 0; i < 12; i++) { const x = ((t * 1900 + i * 157) % (L + 120)) - 60, y = ((i * 71) % 100 - 50) / 100 * h * 1.3; c.beginPath(); c.moveTo(x, y); c.lineTo(x + 70, y); c.stroke(); }
+    const S = 300, x0 = (t * 1100) % S; // the bark rings: tall cream rings riding down the beam, opening out from the paw
+    for (let x = x0 - S; x < L + S; x += S) {
+      if (x < 20) continue;
+      const ry = h * .78 * (.55 + .45 * Math.min(1, x / 400)), rx = ry * .22;
+      c.beginPath(); c.ellipse(x, 0, rx, ry, 0, 0, 7); c.lineWidth = 15; c.strokeStyle = F2INK; c.stroke(); c.lineWidth = 8; c.strokeStyle = SU_CR; c.stroke();
+      c.beginPath(); c.ellipse(x, 0, rx, ry, 0, Math.PI * 1.1, Math.PI * 1.4); c.lineWidth = 3; c.strokeStyle = '#ffffff'; c.stroke();
+    }
+    c.restore();
+    beamBand(c, L, h, 1, 14, t, 0, 1); c.lineWidth = 5; c.strokeStyle = F2INK; c.stroke();
+  }
+  /** round 3: the beam's paw stars, drawn OVER the dog (drawF2): the gold paw burst for the whole firing time and the start star,
+   *  opaque, shrinking out over its first .25 s (no fade). */
+  function drawBeamStars(c, b) {
+    const { f, t, end, h, fl } = beamGeo(b);
+    c.scale(f, 1); if (b.off && b.off[1]) c.translate(0, -b.off[1]); c.lineJoin = 'round';
+    if (t <= end && h > 4) { c.save(); c.translate(.22 * h, 0); c.rotate(t * 3); star(c, 10, .3 * h * fl, .17 * h); // round 3: at the paw front, .3 h (was .55 h round the dog's middle: it hid him) c.fillStyle = SU_HI; c.fill(); c.lineWidth = 4; c.strokeStyle = F2INK; c.stroke();
+      c.beginPath(); c.arc(0, 0, .09 * h, 0, 7); c.fillStyle = SU_CR; c.fill(); c.restore(); }
+    if (t < .25) { const s = 1 - t / .25; if (s * 220 > 4) { star(c, 10, 220 * s, 130 * s); c.fillStyle = SU_HI; c.fill(); c.lineWidth = 4; c.strokeStyle = F2INK; c.stroke();
+      star(c, 10, 110 * s, 66 * s); c.fillStyle = SU_CR; c.fill(); } }
+  }
+  /** round 3: every beam's body under the dogs (bossDraw / EX layer 0, before player 2 and player 1). */
+  const beamsUnder = (c) => { if (window.__noSupFx) return; for (const b of bulF2) if (b.vk === 'bm') { c.save(); c.translate(b.x, b.y); drawBeam(c, b); c.restore(); } };
+  /** F3 Giant Ghost (D100 C1): a big pale cream dog ghost over its hit box (centre b.off up): a see-through cream sheet ending in
+   *  a wavy tail, a wagging tail, ink outline, a gold collar with a gold tag, a face that reads at 1x, cream spin wisps; in its
+   *  death anim (past b.hx) it fades and shrinks. */
   function drawGhost(c, b) { // b.box = half sizes (hitOf)
     const W = b.box[0] * 2, H = b.box[1] * 2, t = b.age, end = b.hx || 5.6, d = t > end ? Math.min(1, (t - end) / 1.0833) : 0, fast = t > 1.8;
-    const face = b.vx < -1 ? -1 : b.vx > 1 ? 1 : (b.sd || 1);
+    const face = b.vx < -1 ? -1 : b.vx > 1 ? 1 : (b.sd || 1), A = 1 - d;
     c.translate(0, -(b.off ? b.off[1] : 0));
     c.rotate(Math.max(-.07, Math.min(.07, b.vx / 9000)));
-    const k = 1 - .5 * d; c.scale(face * k, k); c.globalAlpha = .62 * (1 - d);
+    const k = 1 - .5 * d; c.scale(face * k, k);
     const hw = W * .5, hh = H * .5, wv = Math.sin(t * 9) * 10;
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    // the wagging tail, behind the sheet
+    const wag = Math.sin(t * 11) * .45;
+    c.save(); c.translate(-hw * .7, hh * .15); c.rotate(wag); c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-hw * .35, -hh * .02, -hw * .42, -hh * .32);
+    c.globalAlpha = A; c.lineWidth = 26; c.strokeStyle = F2INK; c.stroke(); c.globalAlpha = .9 * A; c.lineWidth = 15; c.strokeStyle = SU_CR; c.stroke(); c.restore();
     // body: a round head + a sheet that ends in a wavy tail
-    c.beginPath(); c.moveTo(-hw * .8, -hh * .15);
-    c.bezierCurveTo(-hw * .95, -hh * 1.0, hw * .95, -hh * 1.0, hw * .82, -hh * .15);
-    c.bezierCurveTo(hw * .8, hh * .4, hw * .3, hh * .55, hw * .1 + wv, hh * .78);
-    c.quadraticCurveTo(-hw * .1 - wv, hh * 1.02, -hw * .35, hh * .7);
-    c.quadraticCurveTo(-hw * .6 + wv, hh * .85, -hw * .7, hh * .5);
-    c.quadraticCurveTo(-hw * .9, hh * .3, -hw * .8, -hh * .15); c.closePath();
-    c.fillStyle = '#dff4ff'; c.fill(); c.lineWidth = 6; c.strokeStyle = '#3b6f9a'; c.stroke();
-    // floppy ears
-    for (const s of [-1, 1]) { c.beginPath(); c.ellipse(s * hw * .62, -hh * .5, hw * .2, hh * .26, s * .5 + Math.sin(t * 7) * .1, 0, 7); c.fillStyle = '#bfe3fb'; c.fill(); c.lineWidth = 5; c.stroke(); }
-    // face: eyes, nose, a grin
-    c.fillStyle = '#1d3550'; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hw * .12 + s * hw * .2, -hh * .45, hw * .07, hh * .07, 0, 0, 7); c.fill(); }
-    c.beginPath(); c.ellipse(hw * .42, -hh * .3, hw * .09, hh * .05, 0, 0, 7); c.fill();
-    c.lineWidth = 5; c.beginPath(); c.arc(hw * .2, -hh * .28, hw * .22, .3, 2.2); c.strokeStyle = '#1d3550'; c.stroke();
-    // the spin: two swirl arcs round the body, faster in the fast phase
-    c.globalAlpha = .7 * (1 - d); c.rotate(t * (fast ? 14 : 6)); c.lineWidth = 7; c.strokeStyle = '#ffffff';
+    const body = () => { c.beginPath(); c.moveTo(-hw * .8, -hh * .15);
+      c.bezierCurveTo(-hw * .95, -hh * 1.0, hw * .95, -hh * 1.0, hw * .82, -hh * .15);
+      c.bezierCurveTo(hw * .8, hh * .4, hw * .3, hh * .55, hw * .1 + wv, hh * .78);
+      c.quadraticCurveTo(-hw * .1 - wv, hh * 1.02, -hw * .35, hh * .7);
+      c.quadraticCurveTo(-hw * .6 + wv, hh * .85, -hw * .7, hh * .5);
+      c.quadraticCurveTo(-hw * .9, hh * .3, -hw * .8, -hh * .15); c.closePath(); };
+    body(); c.globalAlpha = .94 * A; c.fillStyle = SU_CR; c.fill(); // barely see-through: more mixes the arena in to grey
+    // the gold collar round the neck (clipped to the sheet)
+    c.save(); body(); c.clip(); c.globalAlpha = A;
+    const col = (o) => { c.beginPath(); c.moveTo(-hw, -hh * .1 + o); c.quadraticCurveTo(0, hh * .16 + o, hw, -hh * .1 + o); };
+    col(0); c.lineCap = 'butt'; c.lineWidth = 30; c.strokeStyle = F2INK; c.stroke(); c.lineWidth = 21; c.strokeStyle = SU_AU; c.stroke();
+    col(5); c.lineWidth = 7; c.strokeStyle = SU_LO; c.stroke(); col(-5); c.lineWidth = 4; c.strokeStyle = SU_HI; c.stroke(); c.restore();
+    body(); c.globalAlpha = A; c.lineWidth = 6; c.strokeStyle = F2INK; c.stroke();
+    // floppy ears: cream with a light gold inside
+    for (const s of [-1, 1]) { const ea = s * .5 + Math.sin(t * 7) * .1; c.beginPath(); c.ellipse(s * hw * .62, -hh * .5, hw * .2, hh * .26, ea, 0, 7); c.fillStyle = SU_CR; c.fill(); c.lineWidth = 5; c.strokeStyle = F2INK; c.stroke();
+      c.beginPath(); c.ellipse(s * hw * .62, -hh * .47, hw * .1, hh * .16, ea, 0, 7); c.fillStyle = SU_HI; c.fill(); }
+    // face: eyes with glints, nose, a grin
+    c.fillStyle = F2INK; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hw * .12 + s * hw * .2, -hh * .45, hw * .075, hh * .075, 0, 0, 7); c.fill(); }
+    c.fillStyle = '#ffffff'; for (const s of [-1, 1]) { c.beginPath(); c.arc(hw * .14 + s * hw * .2, -hh * .48, hw * .025, 0, 7); c.fill(); }
+    c.fillStyle = F2INK; c.beginPath(); c.ellipse(hw * .42, -hh * .3, hw * .1, hh * .055, 0, 0, 7); c.fill();
+    c.lineWidth = 5; c.beginPath(); c.arc(hw * .2, -hh * .28, hw * .22, .3, 2.2); c.strokeStyle = F2INK; c.stroke();
+    // the gold tag hanging off the collar's front
+    const gx = hw * .3, gy = hh * .1 + Math.sin(t * 6) * 3, gr = hw * .11;
+    c.beginPath(); c.arc(gx, gy - gr * .4, gr * .45, 0, 7); c.lineWidth = 4; c.strokeStyle = F2INK; c.stroke();
+    c.beginPath(); c.arc(gx, gy + gr * .6, gr, 0, 7); c.fillStyle = SU_LO; c.fill(); c.lineWidth = 4; c.strokeStyle = F2INK; c.stroke();
+    c.beginPath(); c.arc(gx - gr * .12, gy + gr * .48, gr * .8, 0, 7); c.fillStyle = SU_AU; c.fill();
+    c.beginPath(); c.arc(gx - gr * .38, gy + gr * .25, gr * .22, 0, 7); c.fillStyle = '#ffffff'; c.fill();
+    // the spin: two cream wisps round the body, faster in the fast phase
+    c.globalAlpha = .75 * A; c.rotate(t * (fast ? 14 : 6)); c.lineWidth = 8; c.strokeStyle = SU_CR;
     for (let i = 0; i < 2; i++) { c.beginPath(); c.arc(0, 0, hw * 1.05, i * Math.PI, i * Math.PI + 1.3); c.stroke(); }
     c.globalAlpha = 1;
   }
@@ -23346,38 +23415,155 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     c.fillStyle = '#f28ab8'; c.fill(); c.lineWidth = 4; c.strokeStyle = F2INK; c.lineJoin = 'round'; c.stroke();
     c.beginPath(); c.ellipse(-r * .45, -r * .45, r * .22, r * .14, -.6, 0, 7); c.fillStyle = '#ffe1ef'; c.fill(); c.restore();
   }
-  /** F3: per player, a super start (the frozen wind-up: a ring closing in, its colour by super) and Invincibility (a golden
-   *  glow + sparkles for glow s, then blinks: blink s off / on, until drain s). */
-  const SUP_COL = { beam: ['#fff3a0', '#ffd23a'], inv: ['#fff2b8', '#ffb92e'], ghost: ['#e6f6ff', '#7fc3ef'] };
+  /* D100 B1 Invincibility: the dog's own sprite drawn solid gold. A gradient map (SVG filter: the sprite's luminance -> ink, dark
+     gold, #b07a1e, #d6952a, #f2c14e, #ffe58a), so the ink stays ink, the fur's shading becomes darker-gold shading and the eyes
+     stay readable (white -> light gold, pupils ink). Player 2's copy is blue-tinted (P2_TINT below): its filter undoes the tint
+     first. Cached per pose frame (the sprite's cache key); a light sweep runs across it every SUP_SHINE s. Not legacy code. */
+  let supStretch = null; const supFlt = [null, null]; // round 3: per slot, its stretched gold filter (supStretch below)
+  const SUP_MAP = [[0, '#14100a'], [.25, '#4a3008'], [.5, '#b07a1e'], [.66, '#d6952a'], [.8, '#f2c14e'], [.92, '#ffe58a'], [1, '#fff4c8']]; // round 2: spread for real shading
+  const SUP_SHINE = .6, SUP_SWEEP = .26;
+  const SUP_RIM = 6 + 4; // round 3: the lower-right rim, ~6 px at 1x inside the ~4 px ink (screen px; x sprite px per screen px below)
+  {
+    const hx = (s, i) => parseInt(s.slice(1 + 2 * i, 3 + 2 * i), 16) / 255, tab = (ch) => Array.from({ length: 33 }, (_, n) => {
+      const L = n / 32; let j = 0; while (j < SUP_MAP.length - 2 && SUP_MAP[j + 1][0] < L) j++;
+      const a = SUP_MAP[j], b2 = SUP_MAP[j + 1], u = Math.max(0, Math.min(1, (L - a[0]) / (b2[0] - a[0])));
+      return (hx(a[1], ch) + (hx(b2[1], ch) - hx(a[1], ch)) * u).toFixed(4); }).join(' ');
+    // round 3: a contrast stretch before the map (luminance x K + B, set per dog from its own sprite: supStretch), so the fur lands on #f2c14e, its shading on #d6952a / #b07a1e
+    const flt = (id, k, K = 1, B = 0) => { const row = k.map((v) => (v * K).toFixed(4)).join(' ') + ' 0 ' + B.toFixed(4);
+      return '<filter id="' + id + '" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="' + row + '  ' + row + '  ' + row + '  0 0 0 1 0"/>'
+        + '<feComponentTransfer><feFuncR type="table" tableValues="' + tab(0) + '"/><feFuncG type="table" tableValues="' + tab(1) + '"/><feFuncB type="table" tableValues="' + tab(2) + '"/></feComponentTransfer></filter>'; };
+    const LUM = [.2126, .7152, .0722], TINT2 = [.75, .88, 1.15]; // TINT2 = P2_TINT (declared further down)
+    // round 3: the fur mask (white where the sprite is lighter than its ink, so the highlight / rim passes never paint the ink or pupils)
+    const fur = (id, k) => '<filter id="' + id + '" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  '
+      + k.map((v) => (v * 6).toFixed(4)).join(' ') + ' 0 -1.8"/><feComposite in2="SourceGraphic" operator="in"/></filter>';
+    document.body.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute">' + flt('l2dGold', LUM)
+      + flt('l2dGold2', LUM.map((v, i) => v / TINT2[i])) + fur('l2dFur', LUM) + fur('l2dFur2', LUM.map((v, i) => v / TINT2[i])) + '</svg>');
+    /* round 3: the stretch per slot, measured once from the dog's own sprite (a 128 px read-back): its non-ink luminance 25th / 75th
+       percentiles -> .58 (between #b07a1e and #d6952a) / .82 (#f2c14e); K clamped to [1, 4]. Its filter is made once (l2dGoldS<slot>). */
+    supStretch = (slot, src) => {
+      const k = slot ? LUM.map((v, i) => v / TINT2[i]) : LUM, n = 128, cv = document.createElement('canvas'); cv.width = cv.height = n;
+      const x = cv.getContext('2d', { willReadFrequently: true }); x.drawImage(src, 0, 0, n, n); const A = x.getImageData(0, 0, n, n).data, L = [];
+      for (let i = 0; i < A.length; i += 4) if (A[i + 3] > 200) { const l = (k[0] * A[i] + k[1] * A[i + 1] + k[2] * A[i + 2]) / 255; if (l > .3) L.push(l); }
+      if (L.length < 20) return null;
+      L.sort((a, b) => a - b); const p25 = L[Math.floor(L.length * .25)], p75 = L[Math.floor(L.length * .75)];
+      const K = Math.max(1, Math.min(4, (.82 - .58) / Math.max(1e-3, p75 - p25))), B = .82 - K * p75, id = 'l2dGoldS' + slot;
+      document.body.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute">' + flt(id, k, K, B) + '</svg>');
+      try { (window.__l2dStretch = window.__l2dStretch || {})[slot] = { p25: +p25.toFixed(3), p75: +p75.toFixed(3), K: +K.toFixed(3), B: +B.toFixed(3) }; } catch (e) { /* no window */ }
+      return 'url(#' + id + ')';
+    };
+  }
+  const supGold = [0, 1].map(() => { const cv = document.createElement('canvas'), sh = document.createElement('canvas'); return { cv, x: cv.getContext('2d'), sh, sx: sh.getContext('2d'), key: null }; });
+  let p1Po = null; // player 1's pose this frame (pDraw's argument, below)
+  /** The Invincibility time e of a player whose gold shows this frame (glow, or a blink's "on" half), else -1. */
+  function supGoldE(q) {
+    const d = SUP_T().inv;
+    if (!q || !(q.si > 0) || !d || q.s === 'dead') return -1;
+    const e = d.dur - q.si;
+    if (e >= d.drain || (e >= d.glow && ((e - d.glow) % (2 * d.blink)) < d.blink)) return -1; // a blink: off first
+    return e;
+  }
+  /** Draw a dog's gold copy over it: src = the sprite drawn this frame, key = its pose key, the transform as legacy pDraw. */
+  function goldDog(c, slot, src, key, po, e, x, h, face, filt) {
+    if (!src || !src.width || window.__noSupGold) return;
+    const g = supGold[slot], W = src.width, Hh = src.height;
+    if (g.cv.width !== W || g.cv.height !== Hh) { g.cv.width = g.sh.width = W; g.cv.height = g.sh.height = Hh; g.key = null; }
+    if (g.key !== key) { if (!supFlt[slot]) supFlt[slot] = supStretch(slot, src); g.x.clearRect(0, 0, W, Hh); g.x.filter = supFlt[slot] || filt; g.x.drawImage(src, 0, 0); g.x.filter = 'none'; g.key = key; goldTone(g, src, slot); }
+    let im = g.cv; const u = (e % SUP_SHINE) / SUP_SWEEP;
+    if (u < 1) { // the shine: a soft cream band sweeping across him, kept on his own pixels
+      const s = g.sx, bx = -W * .2 + W * 1.4 * u, bw = W * .18;
+      s.globalCompositeOperation = 'source-over'; s.clearRect(0, 0, W, Hh); s.drawImage(g.cv, 0, 0); s.globalCompositeOperation = 'source-atop';
+      s.save(); s.translate(bx, Hh / 2); s.rotate(.38); const gr = s.createLinearGradient(-bw, 0, bw, 0);
+      gr.addColorStop(0, 'rgba(255,251,230,0)'); gr.addColorStop(.5, 'rgba(255,248,214,.9)'); gr.addColorStop(1, 'rgba(255,251,230,0)');
+      s.fillStyle = gr; s.fillRect(-bw, -Hh, bw * 2, Hh * 2); s.restore(); s.globalCompositeOperation = 'source-over'; im = g.sh; }
+    c.save(); c.globalAlpha = po.alpha == null ? 1 : po.alpha; c.translate(x, PGY - h); c.scale(face, 1); if (po.fit) c.translate(-po.fit * VK * SC, 0); c.scale(SC, SC); c.drawImage(im, -AX, -AY); c.restore();
+  }
+  /** round 3: the fixed light on the cached gold copy (source-atop on the fur only, never the ink): a #ffe58a highlight upper-left
+   *  (~25 % of the dog, alpha .6) and a #b07a1e rim lower-right (~6 px at 1x, alpha .7). The dog's box from an 48 px read-back. */
+  const toneCv = [0, 1, 2].map(() => document.createElement('canvas'));
+  function goldTone(g, src, slot) {
+    const W = src.width, Hh = src.height, [sm, fm, ov] = toneCv, k = 48;
+    sm.width = sm.height = k; const sx = sm.getContext('2d', { willReadFrequently: true }); sx.clearRect(0, 0, k, k); sx.drawImage(src, 0, 0, k, k);
+    const A = sx.getImageData(0, 0, k, k).data; let x0 = k, y0 = k, x1 = -1, y1 = -1;
+    for (let y = 0; y < k; y++) for (let x = 0; x < k; x++) if (A[(y * k + x) * 4 + 3] > 64) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    if (x1 < 0) return;
+    const bx = x0 * W / k, by = y0 * Hh / k, bw = (x1 + 1 - x0) * W / k, bh = (y1 + 1 - y0) * Hh / k;
+    if (fm.width !== W || fm.height !== Hh) { fm.width = ov.width = W; fm.height = ov.height = Hh; }
+    const fx = fm.getContext('2d'), ox = ov.getContext('2d');
+    fx.clearRect(0, 0, W, Hh); fx.filter = slot ? 'url(#l2dFur2)' : 'url(#l2dFur)'; fx.drawImage(src, 0, 0); fx.filter = 'none';
+    // the highlight: a #ffe58a glow round the upper-left quarter of the dog's box (its area ~25 % of the dog)
+    const r = 1.33 * Math.sqrt(bw * bh * .25 / Math.PI), cx = bx + bw * .3, cy = by + bh * .28;
+    ox.globalCompositeOperation = 'source-over'; ox.clearRect(0, 0, W, Hh); ox.drawImage(fm, 0, 0); ox.globalCompositeOperation = 'source-in';
+    const gr = ox.createRadialGradient(cx, cy, 0, cx, cy, r); gr.addColorStop(0, 'rgba(255,229,138,.6)'); gr.addColorStop(.55, 'rgba(255,229,138,.6)'); gr.addColorStop(1, 'rgba(255,229,138,0)');
+    ox.fillStyle = gr; ox.fillRect(0, 0, W, Hh); g.x.drawImage(ov, 0, 0);
+    // the rim: fur pixels whose lower-right neighbour (d px off) is outside the dog
+    const d = Math.round(SUP_RIM / (SC * 1.6));
+    ox.globalCompositeOperation = 'source-over'; ox.clearRect(0, 0, W, Hh); ox.drawImage(fm, 0, 0); ox.globalCompositeOperation = 'source-in';
+    ox.fillStyle = 'rgba(176,122,30,.7)'; ox.fillRect(0, 0, W, Hh); ox.globalCompositeOperation = 'destination-out'; ox.drawImage(src, -d, -d);
+    ox.globalCompositeOperation = 'source-over'; g.x.drawImage(ov, 0, 0);
+  }
+  /** Player 1's gold copy, from EX layer 1 (pDraw, right after the dog). */
+  function supGoldP1(c) {
+    const e = supGoldE(chgPl[0]); if (e < 0 || !p1Po || P.s === 'dead') return;
+    goldDog(c, 0, P.src, P.key + '|' + (p1Po.tint || ''), p1Po, e, P.x, P.h, P.face, 'url(#l2dGold)');
+  }
+  /** F3: per player, a super start (the frozen wind-up: a ring closing in) and Invincibility's gold sparkles. D100 lock 3: the
+   *  closing ring = a gold star-burst ring (ink edged) carrying 8 shapes, one per super (beam = rings, inv = gold shine stars,
+   *  ghost = cream wisps), with cream sparkles inside; same timing as before. */
+  const SUP_RING = { beam: 'ring', inv: 'star', ghost: 'wisp' };
+  /* D100 round 2 (render only, before legacy's draw; supPost after): (1) the sim's flash(c, .15) at a super start would sit at
+     ~.34 white over the whole frozen wind-up (the world clock is held, legacy pDraw :931 fades by T only): per player in a frozen
+     start the flash fades by the player's own st (gone ~.1 s in); (2) legacy's own super look (pDraw :911-914) for a Cuphead
+     super: its 24-point see-through burst is hidden (superWind -1: P.st < superWind + .12 never holds) and its dark dim fades
+     out at the super's own start time (superT = start) instead of legacy's 1.1 s. */
+  const SUP_PL0 = { w: PL.superWind, t: PL.superT };
+  function supPre(sT) {
+    const S = SUP_T(); PL.superWind = SUP_PL0.w; PL.superT = SUP_PL0.t;
+    for (const q of chgPl) if (q && q.s === 'super' && q.su && S[q.su] && q.st < S[q.su].start) flashT = Math.min(flashT, sT - .15 - q.st);
+    // round 3: the beam's fire flash (the sim's flash(c) as it fires): <= ~.06 white on its fire frame, gone by the next one
+    for (const q of chgPl) if (q && q.s === 'super' && q.su && S[q.su] && S[q.su].kind === 'beam') { const d = q.st - S[q.su].start; if (d >= 0 && d < .1) flashT = Math.min(flashT, sT - .25 + Math.max(0, .018 - d));
+      if (d >= 0 && d < .1 && window.__l2dWash) window.__l2dWash.push([+d.toFixed(3), sT - flashT < .25 ? +(.85 * (1 - (sT - flashT) / .25)).toFixed(3) : 0]); } // tools/art/supers_gold_shots.py: legacy's white wash per fire frame
+    const q = chgPl[0]; if (q && q.s === 'super' && q.su && S[q.su]) { PL.superWind = -1; PL.superT = S[q.su].start; }
+  }
+  function supPost() { PL.superWind = SUP_PL0.w; PL.superT = SUP_PL0.t; }
+  const shine4 = (c, r) => { c.beginPath(); for (let i = 0; i < 8; i++) { const a = (i * Math.PI) / 4, q = i % 2 ? r * .28 : r; c.lineTo(Math.cos(a) * q, Math.sin(a) * q); } c.closePath(); };
   function drawSupers(c) {
     const S = SUP_T();
     for (const q of chgPl) {
       if (!q || q.s === 'dead') continue;
       const x = q.x, y = PGY - q.h - .55 * UN;
       if (q.s === 'super' && q.su && S[q.su]) {
-        const d = S[q.su], k = Math.min(1, q.st / d.start), col = SUP_COL[d.kind] || SUP_COL.beam;
-        if (k < 1) {
-          c.save(); c.translate(x, y);
-          const g = c.createRadialGradient(0, 0, 0, 0, 0, 90 + 40 * k); g.addColorStop(0, col[0]); g.addColorStop(1, 'rgba(255,255,255,0)');
-          c.globalAlpha = .45 + .4 * k; c.fillStyle = g; c.beginPath(); c.arc(0, 0, 90 + 40 * k, 0, 7); c.fill();
-          c.globalAlpha = 1; c.rotate(q.st * 5); star(c, 8, 150 * (1 - k) + 50, 120 * (1 - k) + 34); c.lineWidth = 5; c.strokeStyle = col[1]; c.stroke();
+        const d = S[q.su], k = Math.min(1, q.st / d.start), kind = SUP_RING[d.kind] || 'ring';
+        if (k < 1 && !window.__noSupFx) {
+          c.save(); c.translate(x, y); c.lineJoin = 'round'; c.lineCap = 'round';
+          const R = 150 * (1 - k) + 50, r1 = 120 * (1 - k) + 34, rot = q.st * 5;
+          for (let n = 0; n < 6; n++) { // cream sparkles inside the ring, each on its own beat
+            const ph = q.st * 4 + n * .41, u = ph - Math.floor(ph), r = 7 * Math.sin(u * Math.PI); if (r < 1.5) continue;
+            const a = n * 1.05 + Math.floor(ph) * 1.7, rr = r1 * (.35 + .4 * ((n * 37) % 10) / 10);
+            c.save(); c.translate(Math.cos(a) * rr, Math.sin(a) * rr); shine4(c, r); c.fillStyle = SU_CR; c.fill(); c.lineWidth = 1.2; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
+          c.rotate(rot); star(c, 12, R, r1 + (R - r1) * .45); c.lineWidth = 14; c.strokeStyle = F2INK; c.stroke(); c.lineWidth = 9; c.strokeStyle = SU_AU; c.stroke(); // round 2: ink 14 / gold 9
+          for (let i = 0; i < 8; i++) {
+            const a = i * Math.PI / 4, rr = (R + r1) * .5, s = 18 + 6 * k; // round 2: each shape >= 20 px at 1x
+            c.save(); c.rotate(a); c.translate(rr, 0);
+            if (kind === 'ring') { c.beginPath(); c.ellipse(0, 0, s * .5, s, 0, 0, 7); c.lineWidth = 9; c.strokeStyle = F2INK; c.stroke(); c.lineWidth = 5; c.strokeStyle = SU_CR; c.stroke(); }
+            else if (kind === 'star') { c.rotate(-rot - a); shine4(c, s * 1.1); c.fillStyle = SU_HI; c.fill(); c.lineWidth = 3; c.strokeStyle = F2INK; c.stroke(); }
+            else { c.beginPath(); c.moveTo(0, -s * .55); c.bezierCurveTo(s * .9, -s * .55, s * .9, s * .55, 0, s * .55); c.quadraticCurveTo(-s * .6, s * .5, -s * 1.5, s * 1.1); c.quadraticCurveTo(-s * .6, -s * .2, 0, -s * .55); c.closePath();
+              c.fillStyle = SU_CR; c.fill(); c.lineWidth = 3; c.strokeStyle = F2INK; c.stroke(); }
+            c.restore();
+          }
           c.restore();
         }
       }
-      if (q.si > 0 && S.inv) {
-        const d = S.inv, e = d.dur - q.si;
-        if (e >= d.drain) continue;
-        if (e >= d.glow && ((e - d.glow) % (2 * d.blink)) < d.blink) continue; // a blink: off first
-        c.save(); c.translate(x, y);
-        const R = 78 + 6 * Math.sin(e * 10), g = c.createRadialGradient(0, 0, 10, 0, 0, R);
-        g.addColorStop(0, 'rgba(255,246,190,.75)'); g.addColorStop(.6, 'rgba(255,205,70,.45)'); g.addColorStop(1, 'rgba(255,190,40,0)');
-        c.fillStyle = g; c.beginPath(); c.arc(0, 0, R, 0, 7); c.fill();
-        c.lineWidth = 4; c.strokeStyle = 'rgba(255,214,90,.9)'; c.beginPath(); c.arc(0, 0, R * .8, 0, 7); c.stroke();
-        for (let i = 0; i < 6; i++) { const a = e * 3 + i * Math.PI / 3, rr = R * (.7 + .25 * Math.sin(e * 7 + i)); c.save(); c.translate(Math.cos(a) * rr, Math.sin(a) * rr); c.rotate(e * 6 + i); star(c, 4, 11, 3.5); c.fillStyle = '#fffbe0'; c.fill(); c.lineWidth = 2; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
+      const e = supGoldE(q);
+      if (e >= 0) { // Invincibility: small gold sparkles popping round the gold dog
+        c.save(); c.translate(x, y); c.lineJoin = 'round';
+        for (let i = 0; i < 6; i++) { const ph = e * 2.6 + i * .37, u = ph - Math.floor(ph), r = 8 * Math.sin(u * Math.PI); if (r < 1.5) continue;
+          const a = i * 1.047 + Math.floor(ph) * 2.3, rr = 52 + 14 * ((i * 7 + Math.floor(ph) * 3) % 5) / 5;
+          c.save(); c.translate(Math.cos(a) * rr, Math.sin(a) * rr * 1.15); shine4(c, r); c.fillStyle = i % 2 ? SU_HI : SU_AU; c.fill(); c.lineWidth = 1.5; c.strokeStyle = F2INK; c.stroke(); c.restore(); }
         c.restore();
       }
     }
   }
+
   /* F2c: the Charge glow at a charging dog's gun (cgK 0..1 = charged part, from legacyView; 1 = full).
      D98 (locked spec 5): the nugget GROWING at the paw tip: chgSize(cg), 10 units wide at cg 0 -> the full shot's 60 x 38 at 1
      (linear in width), held at the glove tip legacy drew this frame (P / p2Look tip; else .5 UN ahead, .27 UN up) along the aim:
@@ -23415,7 +23601,12 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
      Helpers from src/render/flashFx.ts (window.__flashFx, set by legacyView.ts). Not legacy code. */
   const flOf = (f, fl0) => (!f || f.hp <= 0 || !window.__flashFx ? fl0 : window.__flashFx.bossFlashOn(f.hit));
   const pPose0 = pPose;
-  pPose = function () { const b = pPose0(); if (typeof P.blinkA === 'number') b.alpha = P.blinkA; return b; };
+  /* round 3: a Cuphead super (P.su) drops legacy's 2-on / 2-off yellow super tint (pPose :501): the gold dog is Invincibility's
+     look only. __l2dTint counts super poses per flicker phase (A = legacy's tint-on frames): [poses, still tinted] */
+  const supTint = { A: [0, 0], B: [0, 0] }; try { window.__l2dTint = supTint; } catch (e) { /* no window */ }
+  pPose = function () { const b = pPose0(); if (typeof P.blinkA === 'number') b.alpha = P.blinkA;
+    if (P.s === 'super' && P.su && SUP_T()[P.su]) { b.tint = null; const k = supTint[Math.floor(P.st * 24) % 4 < 2 ? 'A' : 'B']; k[0]++; if (b.tint) k[1]++; }
+    return b; };
   const sgn = (v) => (v < 0 ? -1 : v > 0 ? 1 : 0);
   let bossId = null;
 
@@ -23469,6 +23660,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     c.fillStyle = 'rgba(20,16,10,' + (P.s === 'dead' ? .22 * Math.max(0, 1 - P.st / 1.2) : .22) + ')'; c.beginPath();
     c.ellipse(P.x, PGY - fl + 3, .48 * UN * (1 - Math.min(.6, (P.h - fl) / (3 * UN))), .08 * UN, 0, 0, 7); c.fill();
     c.save(); c.globalAlpha = po.alpha; c.translate(P.x, PGY - P.h); c.scale(P.face, 1); if (po.fit) c.translate(-po.fit * VK * SC, 0); c.scale(SC, SC); c.drawImage(p2C, -AX, -AY); c.restore();
+    { const e = supGoldE(chgPl[1]); if (e >= 0 && P.s !== 'dead') goldDog(c, 1, p2C, key, po, e, P.x, P.h, P.face, 'url(#l2dGold2)'); } // D100: its Invincibility gold copy
     if (P.s === 'dead') pDrawGhost(c);
     for (const k of ['key', 'dirty', 'src', 'tip', 'tipOk']) p2Look[k] = P[k];
     Object.assign(sp2, JSON.parse(JSON.stringify(SP)));
@@ -23550,10 +23742,10 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       c.stroke(); });
     c.restore();
   }
-  bossDraw = function (c) { bossDraw0(c); drawBlasts(c); if (p2) drawP2(c); // D96: the Lobber blast under both dogs
+  bossDraw = function (c) { bossDraw0(c); drawBlasts(c); beamsUnder(c); if (p2) drawP2(c); // D96: the Lobber blast under both dogs
  if (zonesOv) drawZones(c, zonesOv); };
   const exFx0 = exFxDraw;   // levels have no bossDraw: player 2 goes in right before player 1's EX layer 0 (pDraw :916)
-  exFxDraw = function (c, layer) { if (layer === 0 && !bossRun) { drawBlasts(c); if (p2) drawP2(c); } exFx0(c, layer); drawGoldMuzzle(c, layer); if (layer === 2) { drawGoldBursts(c); drawF2(c); } if (layer === 1 && bossRun && mkPh && bossId === 'boss4') drawPh(c, mkPh.filter(mkStone)); };
+  exFxDraw = function (c, layer) { if (layer === 1) supGoldP1(c); if (layer === 0 && !bossRun) { drawBlasts(c); beamsUnder(c); if (p2) drawP2(c); } exFx0(c, layer); drawGoldMuzzle(c, layer); if (layer === 2) { drawGoldBursts(c); drawF2(c); } if (layer === 1 && bossRun && mkPh && bossId === 'boss4') drawPh(c, mkPh.filter(mkStone)); };
   petalDone = function () {};   // the port runs the story (legacy pFrame calls this 1.8 s after the petal)
   /* the fight title follows the phase (bossRun.name = the port's title, set in boss()); legacy's Cammy title is a fixed
      'Cammyyy <emote> Initiator', so its name line is drawn as plain text like every other boss */
@@ -23668,7 +23860,24 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const goldOf = (b) => (b && (b.vk === 'pn' || b.vk === 'pi' || b.vk === 'cn' || b.vk === 'cr' || b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le' || b.vk === 'qt' || b.vk === 'qf' || b.vk === 'qe' || b.vk === 'rb' || b.vk === 'rx') ? 1 : 0); // D96: Peashooter + Spread + Chaser + Lobber + Charge + Roundabout
   /** D96: the hit lookups also see the Chaser's bones (bulF2 'ch' / 'cx'), so their hits spark gold */
   const bulA = () => bulN().concat(bulF2.filter((b) => b.vk === 'ch' || b.vk === 'cx' || b.vk === 'lb' || b.vk === 'lx' || b.vk === 'le' || b.vk === 'qt' || b.vk === 'qf' || b.vk === 'qe' || b.vk === 'rb' || b.vk === 'rx')); // + the Lobber's balls / blast, the Charge's shots / EX, the Roundabout's frisbees
-  const goldBurst = (b) => { const e = fxL[fxL.length - 1]; if (goldOf(b) && e && e.k === 'burst') e.k = 'burstG'; };
+  const goldBurst = (b) => { const e = fxL[fxL.length - 1]; if ((goldOf(b) || supB(b)) && e && e.k === 'burst') e.k = supB(b) ? 'burstS' : 'burstG'; };
+  /* D100 round 2: a super's hits (Energy Beam / Giant Ghost, ex:1 so legacy's EX 'burst' with its cyan slivers fired): the burst
+     is drawn gold instead (drawGoldBursts: the gold puffs + star, plus #ffe58a slivers with a #f6ecd0 core and ink, k 'burstS').
+     The hit's super = a bm / gh of that player whose box (+40) holds the hit, unless an EX shot is right at it. */
+  const supB = (b) => (b && (b.vk === 'bm' || b.vk === 'gh') ? 1 : 0);
+  function supHit(e, b) {
+    if (b && Math.hypot(b.x - e.x, b.y - e.y) < 50) return null;
+    return bulF2.find((q) => supB(q) && (e.slot == null || q.owner === e.slot) && q.box && (() => { const h = hitC(q); return Math.abs(e.x - h.x) <= q.box[0] + 40 && Math.abs(e.y - h.y) <= q.box[1] + 40; })()) || supOn(e);
+  }
+  /** round 3: no box holds it (the beam's first hit lands before its box is seen here): still the super's hit while that player's
+   *  beam / ghost is out or it is in its super state (a stand-in beam along its facing) */
+  function supOn(e) {
+    const q = bulF2.find((b) => supB(b) && (e.slot == null || b.owner === e.slot)); if (q) return q;
+    const S = SUP_T(), i = chgPl.findIndex((p, n) => p && p.s === 'super' && p.su && S[p.su] && (e.slot == null || n === e.slot));
+    return i < 0 ? null : { vk: 'bm', x: e.x, y: e.y, ang: chgPl[i].face < 0 ? Math.PI : 0 };
+  }
+  const supN = { cyan: 0, gold: 0 }; try { window.__l2dSupN = supN; } catch (e) { /* no window */ } // tools/art/supers_gold_shots.py: EX bursts left cyan / drawn gold
+  const supCount = () => { const k = fxL.length && fxL[fxL.length - 1].k; if (k === 'burst') supN.cyan++; else if (k === 'burstS') supN.gold++; };
   const pDrawSpark0 = pDrawSpark;
   pDrawSpark = function (c, s) {
     if (!s.gold || s.big) return pDrawSpark0(c, s);
@@ -23684,8 +23893,12 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     c.beginPath(); c.arc(0, 0, 2.2, 0, 7); c.fillStyle = AU_RIM; c.fill(); c.restore();
   };
   function drawGoldBursts(c) {
-    for (const e of fxL) { if (e.k !== 'burstG') continue; const t = (T - e.t0) / e.life; if (t < 0 || t >= 1) continue;
+    for (const e of fxL) { if (e.k !== 'burstG' && e.k !== 'burstS') continue; const t = (T - e.t0) / e.life; if (t < 0 || t >= 1) continue;
       const ez = 1 - Math.pow(1 - Math.min(1, t * 1.6), 2); c.save(); c.translate(e.x, e.y); c.lineJoin = 'round';
+      if (e.k === 'burstS') for (const s of e.sl) { // legacy's sliver diamonds (:238), gold: #ffe58a, a #f6ecd0 core, 2 px ink
+        const d = .2 * UN + s.v * ez * .85, L = s.l * 1.5 * (1 - t * .8), W = L * .26; c.save(); c.translate(Math.cos(s.a) * d, Math.sin(s.a) * d); c.rotate(s.a);
+        c.beginPath(); c.moveTo(L / 2, 0); c.lineTo(0, -W); c.lineTo(-L / 2, 0); c.lineTo(0, W); c.closePath(); c.fillStyle = SU_HI; c.fill(); c.lineWidth = 2; c.strokeStyle = F2INK; c.stroke();
+        c.beginPath(); c.moveTo(L * .3, 0); c.lineTo(0, -W * .4); c.lineTo(-L * .3, 0); c.lineTo(0, W * .4); c.closePath(); c.fillStyle = SU_CR; c.fill(); c.restore(); }
       const pp = e.pf.map((p) => { const d = (.35 * UN + p.v * ez * .9), r = p.r * .7 * (1.3 - Math.max(0, t - .45) * 2.4); return { x: Math.cos(p.a) * d, y: Math.sin(p.a) * d, r: Math.max(0, r) }; }).filter((q) => q.r > 0)
         .flatMap((q) => [q, { x: q.x + q.r * .8, y: q.y - q.r * .35, r: q.r * .7 }, { x: q.x - q.r * .7, y: q.y + q.r * .5, r: q.r * .65 }]); // puffs x .7 (round 2)
       const cl = () => { c.beginPath(); pp.forEach((q) => { c.moveTo(q.x + q.r, q.y); c.arc(q.x, q.y, q.r, 0, 7); }); };
@@ -23865,11 +24078,12 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
   function tgtHitFx(e, ex) {                                                                             // pTgtHit 02_story_menus :127-131
     const g = dummyAt(e.x, 0); if (!g) return;
-    const b = nearest(bulA(), e.x, e.y), ang = b ? b.ang : 0, off = tgtOffAt[Math.round(g.x)] || 0;
-    tgtHit[g.id] = .25; if (ex) { exBurst(e.x, e.y, ang); goldBurst(b); tgtPale[g.id] = T; }
+    let b = nearest(bulA(), e.x, e.y); const sb = ex ? supHit(e, b) : null; if (sb) b = sb;
+    const ang = b ? b.ang : 0, off = tgtOffAt[Math.round(g.x)] || 0;
+    tgtHit[g.id] = .25; if (ex) { exBurst(e.x, e.y, ang); goldBurst(b); supCount(); tgtPale[g.id] = T; }
     const dd = b ? Math.hypot(e.x - g.x, e.y - Math.max(PGY - HB.targetCy - off, Math.min(PGY - HB.targetLow - off, e.y))) : 0;
     const k = Math.min(dd, 52) / (dd || 1);
-    sparkL.push({ x: g.x + (e.x - g.x) * k, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b), qf: b && b.vk === 'qf' ? 1 : 0 });
+    sparkL.push({ x: g.x + (e.x - g.x) * k, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b) || supB(b), qf: b && b.vk === 'qf' ? 1 : 0 });
   }
   function tgtBreakFx(e, batch) {                                                                        // pBreak :134-140 (state, sfx, gates: the port)
     const g = dummyAt(e.x, 0); if (!g) return;
@@ -23890,9 +24104,10 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   }
 
   function bossHitFx(e, ex) {                                                                            // bossDamage 08_bosses :127-129
-    const b = nearest(bulA(), e.x, e.y), ang = b ? b.ang : Math.PI;
-    if (ex) { exBurst(e.x, e.y, ang); goldBurst(b); bossRun.fight.pale = T; }
-    sparkL.push({ x: e.x, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b), qf: b && b.vk === 'qf' ? 1 : 0 }); // round 3: a full Charge hit = its own big spark
+    let b = nearest(bulA(), e.x, e.y); const sb = ex ? supHit(e, b) : null; if (sb) b = sb;
+    const ang = b ? b.ang : Math.PI;
+    if (ex) { exBurst(e.x, e.y, ang); goldBurst(b); supCount(); bossRun.fight.pale = T; }
+    sparkL.push({ x: e.x, y: e.y, t0: T, ang: ang + Math.PI, s: ex ? 1.8 : 1, gold: goldOf(b) || supB(b), qf: b && b.vk === 'qf' ? 1 : 0 }); // round 3: a full Charge hit = its own big spark
   }
 
   function shotFx(e, pl) {                                                                               // pSpawn :529-531
@@ -24179,6 +24394,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   let noHill = false;
   const pDraw0 = pDraw;
   pDraw = function (po) {
+    p1Po = po; // D100: player 1's pose for its Invincibility gold copy (supGoldP1)
     if (!bossRun || !PH_ONLY[bossId]) return pDraw0(po);
     const w = pDrawWhale; pDrawWhale = function () {}; noHill = true;
     try { return pDraw0(po); } finally { pDrawWhale = w; noHill = false; }
@@ -24424,7 +24640,8 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       if (!hold && !petalT) levelLook(Math.min(.1, Math.max(0, s.T - lookT)));   // sim seconds, so a slow frame does not run the chunks ahead
       lookT = s.T;
       T = s.T - (hold ? 0 : dt);
-      try { pFrame(dt); } finally { const pin = camPin; camPin = null; cam.x = pin.x; cam.y = pin.y; }   // legacy's own camera = the port's between frames too
+      supPre(s.T);
+      try { pFrame(dt); } finally { supPost(); const pin = camPin; camPin = null; cam.x = pin.x; cam.y = pin.y; }   // legacy's own camera = the port's between frames too
       return pcv;
     },
 
@@ -24533,7 +24750,8 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       if (look && !hold) look(f, shz ? 0 : dt, fired, pr, s.players);
       hits = s.hits; brk = s.brk; tgtHp = clone(s.tgtHp); tgtDead = clone(s.tgtDead);
       T = s.T - (hold ? 0 : dt); // pFrame adds dt back (it holds T during hit-stop)
-      pFrame(dt);
+      supPre(s.T);
+      try { pFrame(dt); } finally { supPost(); }
       return pcv;
     },
   };
