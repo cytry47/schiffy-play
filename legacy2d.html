@@ -24672,6 +24672,10 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   /** Squash a dog's spring on an event (legacy sqEv), on the dog of the event's slot. */
   function sq(e, v) { if (!e.slot) sqEv(v); else { sp2.sq.x = v; sp2.sq.v = 0; } }
 
+  /** Put a backed-up sprite (src) back over a sprite canvas's whole content (g = its context), in canvas pixels. Legacy's sprite
+   *  contexts keep their own dog transform between renders (sprX: scale .62 + an offset), so a plain clearRect / drawImage there
+   *  cleared only part of player 1's sprite and pasted it back shrunk (bug 2026-11-04: in co-op player 1 drew ~0.79 x its size). */
+  function pastePx(g, src) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, g.canvas.width, g.canvas.height); g.drawImage(src, 0, 0); g.restore(); }
   function swapIn(obj, src) { const keep = Object.assign({}, obj); for (const k in obj) if (!(k in src)) delete obj[k]; Object.assign(obj, src); return keep; }
 
   /** Draw player 2's shadow and dog on c (legacy pDraw :915-918 with P = player 2), then restore player 1. */
@@ -24714,7 +24718,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     swapIn(P, pl1); swapIn(SP, JSON.parse(sp1));
     stReal = st1;
     ({ jb, db, exb, sb, ib, mtr, weapon, shotN, parries } = g1);
-    if (fresh && p1Src) { const g = p1Src.getContext('2d'); g.clearRect(0, 0, p1Src.width, p1Src.height); g.drawImage(p1C, 0, 0); }
+    if (fresh && p1Src) pastePx(p1Src.getContext('2d'), p1C);
   }
   /* ---- player 2 on a map. Legacy owDraw has ONE dog (ow.x / ow.view / ow.walkT ...), so player 2 is a prop at its feet
      (painter's order by y, like the dog): ow's dog fields are swapped to player 2, legacy owSprite renders it into its
@@ -24749,7 +24753,7 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
       try { owSprite(); } finally { Object.assign(ow, d1); }
       if (owP2C.width !== w || owP2C.height !== h) { owP2C.width = w; owP2C.height = h; }
       owP2X.clearRect(0, 0, w, h); owP2X.filter = 'url(#l2dP2)'; owP2X.drawImage(owSprC, 0, 0); owP2X.filter = 'none';
-      owSprX.clearRect(0, 0, w, h); owSprX.drawImage(owP1C, 0, 0); owSprKey = k1;
+      pastePx(owSprX, owP1C); owSprKey = k1;
       owP2Key = key;
     }
     // the dog entry of owDraw (:208-209), at player 2's feet (the prop pass already moved the origin there)
