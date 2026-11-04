@@ -23703,10 +23703,20 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
     CanvasRenderingContext2D.prototype[k] = function (t, x, y, w) {
       if (x === PW - 12 && (y === 26 || y === 48) && this.textAlign === 'right' && this.font.indexOf('15px') >= 0) return;
       if (hud1 && x === 14 && y === 34 && typeof t === 'string' && /^[\u2665\u2661]+$/.test(t)) t = '\u2665'.repeat(Math.max(0, hud1.hp)) + '\u2661'.repeat(Math.max(0, hud1.hm - hud1.hp));
+      if (typeof t === 'string' && window.__padTxt) { const pt = window.__padTxt(t); if (pt !== undefined) t = pt; } // pad mode: glyph tokens (legacyView.ts padText)
       if (typeof t === 'string' && TXT[t] !== undefined) t = TXT[t];
+      if (typeof t === 'string' && t.indexOf('') >= 0 && window.__padRich) { const g = this; window.__padRich(g, t, x, y, k === 'strokeText', (q, qx, qy) => orig.call(g, q, qx, qy)); return; }
       return orig.call(this, t, x, y, w);
     };
   }
+  /* pad mode: a text with glyph tokens measures as drawn (legacy sizes its lesson key caps from measureText) */
+  { const mt = CanvasRenderingContext2D.prototype.measureText;
+    CanvasRenderingContext2D.prototype.measureText = function (t) {
+      if (typeof t !== 'string' || t.indexOf('\u0001') < 0 || !window.__padRichW) return mt.call(this, t);
+      const g = this, w = window.__padRichW(g, t, (q) => mt.call(g, q).width), m0 = mt.call(this, 'M');
+      return { width: w, actualBoundingBoxLeft: 0, actualBoundingBoxRight: w, actualBoundingBoxAscent: m0.actualBoundingBoxAscent, actualBoundingBoxDescent: m0.actualBoundingBoxDescent,
+        fontBoundingBoxAscent: m0.fontBoundingBoxAscent, fontBoundingBoxDescent: m0.fontBoundingBoxDescent };
+    }; }
   const clone = (v) => (v == null ? v : structuredClone(v));
   /** The port's player bullets for legacy's draw. F2a: a Spread EX ball (sx) was drawn as a Spread gem (legacy has no ring
    *  ball); D96: both are gold coins now (vk 'cn' / 'cr', below), out of legacy's list. */
