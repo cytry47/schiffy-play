@@ -25602,7 +25602,8 @@ window.BRUTE_ARMFIT = {"L": [67.61, 268.88, 18.04, 285.74, 27.25, 319.2, 35.83, 
   const bvnFight = (h) => ({ x: 0, hx: 0, hy: 0, state: 'idle', hp: 1, max: 1, show: 1, hit: h ? 0.5 : 0, phase: 1, atk: null, ssv: 1, sz: 1, dieT: 0, rt: 0, hz: [] });
   const BOSS_ART = {
     Rat: [() => window.Rat && window.RatAnim && window.RatNew, (c, h, t) => Rat.drawRig(c, 0, 0, RatNew.S, Object.assign(h ? RatAnim.pose('hurt', 0.12) : RatAnim.pose('idle', t), { flash: false }))],
-    'DJ Moki': [() => window.Moki && window.MokiAnim && window.DjMokiNew, (c, h, t) => Moki.drawRig(c, 0, 0, DjMokiNew.S2, Object.assign(MokiAnim.pose(h ? 'hurt' : 'idle', h ? 0.12 : t), { flash: false }))],
+    // phase 1 look (Ruben 2026-11-04: boss VN portraits = phase 1): the Trash Can, not the DJ
+    'DJ Moki': [() => window.MokiP1 && window.MokiP1Anim && window.DjMokiNew, (c, h, t) => MokiP1.drawRig(c, 0, 0, DjMokiNew.S1, Object.assign(MokiP1Anim.pose(h ? 'hurt' : 'idle', h ? 0.12 : t), { flash: 0 }))],
     Cammy: [() => window.CammyNew && CammyNew.ok, (c, h, t) => CammyNew.drawFight(c, bvnFight(h), false, t)],
     Hanato: [() => window.HanatoNew && HanatoNew.ok, (c, h, t) => HanatoNew.drawFight(c, bvnFight(h), false, t)],
     Magpie: [() => window.Magpie && window.MgAnim && window.MgNew, (c, h, t) => Magpie.drawRig(c, 0, 0, MgNew.S, Object.assign(MgAnim.pose(h ? 'hurt' : 'idle', h ? 0.12 : t), { flash: false }))],
